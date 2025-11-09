@@ -1,0 +1,120 @@
+/* File: frontend/src/pages/AuthPage.css */
+
+/* This centers the card in the middle of the screen */
+.auth-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+/* This is the white card that holds the form */
+.form-card {
+  width: 100%;
+  max-width: 450px;
+  padding: 40px;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+}
+
+.form-card h2 {
+  text-align: center;
+  font-size: 28px;
+  font-weight: 700;
+  color: #333;
+  margin-top: 0;
+  margin-bottom: 30px;
+}
+
+/* This is the container for a label and its input */
+.form-group {
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #555;
+}
+
+/* This styles all text inputs and select dropdowns */
+.form-input,
+.form-select {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-sizing: border-box; /* Fixes padding issues */
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+/* Add a nice blue "glow" when a user clicks an input */
+.form-input:focus,
+.form-select:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15);
+}
+
+/* The main action button (Login / Sign Up) */
+.form-button {
+  width: 100%;
+  padding: 14px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+  transition: background-color 0.2s;
+}
+
+.form-button:hover {
+  background-color: #0056b3;
+}
+
+/* A special style for when the button is loading */
+.form-button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+/* The red error message box */
+.form-error {
+  color: #d8000c;
+  background-color: #ffd2d2;
+  border: 1px solid #d8000c;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+/* The text at the bottom to toggle between pages */
+.toggle-text {
+  text-align: center;
+  margin-top: 25px;
+  font-size: 15px;
+  color: #555;
+}
+
+.toggle-link {
+  color: #007bff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* --- RESPONSIVENESS --- */
+/* This makes it look great on phones */
+@media (max-width: 500px) {
+  .form-card {
+    padding: 30px 25px;
+    box-shadow: none;
+    border-radius: 0;
+  }
+}
