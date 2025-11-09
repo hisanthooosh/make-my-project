@@ -540,7 +540,7 @@ const StudentDashboard = ({ user, onLogout }) => {
   };
 
 
-  // --- PDF Download (No Change) ---
+  // --- PDF Download (FIXED) ---
   const handleDownloadPDF = async () => {
     setLoading(true);
     setError('');
@@ -551,32 +551,43 @@ const StudentDashboard = ({ user, onLogout }) => {
       return;
     }
 
-    const pagesToPrint = input.querySelectorAll('.report-page-a4');
+    // --- FIX #2: Generate filename from user's roll number ---
+    const studentRollNo = user.rollNumber || user.email?.split('@')[0] || 'ProjectReport';
+    const filename = `${studentRollNo}.pdf`;
+    // --- End of FIX #2 ---
+
+    const pagesToPrint = input.querySelectorAll('.report-page-a4'); // This selector will now work
     const pdf = new jsPDF('p', 'mm', 'a4');
     const pdfPageWidth = pdf.internal.pageSize.getWidth();
     const pdfPageHeight = pdf.internal.pageSize.getHeight();
+
+    if (pagesToPrint.length === 0) {
+      console.error("PDF Download Error: No pages found with selector '.report-page-a4'.");
+      setError("PDF Download failed: Could not find any pages to print.");
+      setLoading(false);
+      return;
+    }
 
     try {
       for (let i = 0; i < pagesToPrint.length; i++) {
         const page = pagesToPrint[i];
 
-        const content = page.querySelector('.page-content-scrollable');
-        const originalScrollTop = content ? content.scrollTop : 0;
-        if (content) content.scrollTop = 0;
-
+        // --- Simplified canvas logic ---
+        // Temporarily set height to auto to capture all content
         page.style.height = 'auto';
-        page.style.minHeight = '0';
+        page.style.minHeight = 'auto';
 
         const canvas = await html2canvas(page, {
-          scale: 2,
+          scale: 2, // Keep scale for quality
           useCORS: true,
           width: page.scrollWidth,
           height: page.scrollHeight,
         });
 
+        // Restore original styles
         page.style.height = '';
         page.style.minHeight = '';
-        if (content) content.scrollTop = originalScrollTop;
+        // --- End of simplified logic ---
 
         const imgData = canvas.toDataURL('image/png');
         const imgWidth = canvas.width;
@@ -602,14 +613,16 @@ const StudentDashboard = ({ user, onLogout }) => {
           heightLeft -= pdfPageHeight;
         }
       }
-      pdf.save('ProjectReport.pdf');
+
+      // --- FIX #2: Use the new filename ---
+      pdf.save(filename);
+
     } catch (err) {
       console.error("PDF Download failed:", err);
       setError("PDF Download failed: " + err.message);
     }
     setLoading(false);
   };
-
   // --- Render Editor (MODIFIED) ---
   // This is the single, correct renderEditor function
   const renderEditor = () => {
@@ -1030,7 +1043,7 @@ const StudentDashboard = ({ user, onLogout }) => {
             if (sectionId === 'certificate') {
               return (
                 <div className="flipper-page-slot" key="slot-certificate">
-                  <div id="page-certificate" style={{
+                  <div id="page-certificate" className="report-page-a4" style={{
                     width: "794px",
                     minHeight: "1123px",
                     padding: "50px 60px",
@@ -1297,7 +1310,7 @@ const StudentDashboard = ({ user, onLogout }) => {
             // ---
             return (
               <div className="flipper-page-slot" key={`slot-${page.id}`}>
-                <div style={styles.a4Page}>
+                <div className="report-page-a4" style={styles.a4Page}>
 
                   <div style={styles.pageHeaderContainer}>
                     <span>{studentRollNo}</span>
