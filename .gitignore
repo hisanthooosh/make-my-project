@@ -1,0 +1,16 @@
+# File: makemyreport-project/.gitignore
+
+# Node modules folders
+/frontend/node_modules
+/backend/node_modules
+
+# Firebase secret key
+/backend/firebase-service-account.json
+/backend/firebase-service-account.json.json
+
+# Environment variables
+/frontend/.env
+/backend/.env
+
+# Build files
+/frontend/build

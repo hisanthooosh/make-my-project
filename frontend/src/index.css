@@ -1,0 +1,28 @@
+/* File: frontend/src/index.css */
+
+/* Import a clean, professional font */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* Set up basic styles for the whole app */
+body {
+  margin: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #f0f2f5; /* A light grey background */
+  color: #333;
+}
+
+/* A universal reset for better box model control */
+* {
+  box-sizing: border-box;
+}
+
+/* Default styles for all inputs and buttons for a consistent feel */
+input,
+select,
+button {
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+}
