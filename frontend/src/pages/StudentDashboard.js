@@ -15,7 +15,7 @@ const reportStructure = [
   { id: 'abstract', title: 'Abstract', isPage: true, subsections: [] },
   { id: 'orgInfo', title: 'Organization Information', isPage: true, subsections: [] },
   { id: 'methodologies', title: 'Methodologies', isPage: true, subsections: [] },
-  { id: 'benefits', title: 'Benefits to Company', isPage: true, subsections: [] },
+  { id: 'benefits', title: 'Benefits of the Company/Institution through our report', isPage: true, subsections: [] },
   { id: 'toc', title: 'INDEX', isPage: true, subsections: [] },
   { id: 'weeklyOverview', title: 'Weekly Overview', isPage: true, subsections: [], inputType: 'weeklyTable' },
   {
@@ -579,60 +579,160 @@ const StudentDashboard = ({ user, onLogout }) => {
                 </div>
               );
             }
+            // --- NEW: DYNAMIC INDEX (TOC) ---
+            else if (page.sectionId === 'toc') {
+              // 1. Define which sections strictly belong in the TOC (starting from Acknowledgement)
+              const tocRows = [];
+              let startCollecting = false;
 
-            // --- 6. ALL OTHER PAGES (NOW WITH BORDER) ---
-            // =========================================================
-            // 6. ALL OTHER PAGES (Abstract, Intro, etc.) - FIXED ALIGNMENT
-            // =========================================================
-            else {
-                const text = Array.isArray(content) ? content[page.pageIndex] : (content || getDefaultContent(page.sectionId));
-                const isImageSection = section.inputType === 'image';
-                const imgUrl = Array.isArray(content) ? content[0] : content;
+              // Helper to finding the page number in your 'allPages' list
+              const findPageNumber = (id) => {
+                const foundIdx = allPages.findIndex(p => p.sectionId === id);
+                // logic: page count starts after the first 3 pages (Title, Cert, Scan) -> idx 3 = Page 1
+                if (foundIdx > 2) return foundIdx - 2;
+                return ''; // Don't show number if it's one of the first 3 unnumbered pages
+              };
 
-                pageContent = (
-                    // FIX: Added justifyContent: 'flex-start' so text stays at the top
-                    <div style={{
-                        ...styles.borderFrame, 
-                        justifyContent: 'flex-start', 
-                        alignItems: 'stretch', 
-                        padding: '40px'
-                    }}>
-                        {/* Page Title */}
-                        {page.pageIndex === 0 && (
-                            <h3 style={{ 
-                                textAlign: 'center', 
-                                fontSize: '18pt', 
-                                fontWeight: 'bold', 
-                                textDecoration: 'underline', 
-                                marginBottom: '30px', 
-                                marginTop: '10px', 
-                                textTransform: 'uppercase' 
-                            }}>
-                                {page.parentTitle ? `${page.parentTitle}` : page.title}
-                            </h3>
-                        )}
-                        
-                        {/* Subsection Title */}
-                        {page.parentTitle && page.pageIndex === 0 && (
-                             <h4 style={{ fontSize: '14pt', fontWeight: 'bold', marginBottom: '15px' }}>{page.title}</h4>
-                        )}
+              // 2. Loop through the structure to build the table rows
+              reportStructure.forEach(sect => {
+                // Start collecting only from 'acknowledgement'
+                if (sect.id === 'acknowledgement') startCollecting = true;
 
-                        {/* Content Logic */}
-                        {isImageSection ? (
-                            <div style={{ textAlign: 'center', flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                {imgUrl ? (
-                                    <img src={imgUrl} alt="Diagram" style={{ maxWidth: '100%', maxHeight: '800px', border: '1px solid #ddd' }} />
-                                ) : (
-                                    <p style={{ fontStyle: 'italic', color: '#999' }}>No image uploaded.</p>
-                                )}
-                            </div>
-                        ) : (
-                            <div style={{ fontSize: '13pt', lineHeight: '1.8', textAlign: 'justify', whiteSpace: 'pre-wrap' }}>
-                                {text}
-                            </div>
-                        )}
+                if (startCollecting) {
+                  // If it has subsections (like Introduction 1.1, 1.2), list them
+                  if (sect.subsections && sect.subsections.length > 0) {
+                    // Option A: List the Main Header (e.g., "1. Introduction") pointing to first subsection
+                    const firstSubPage = findPageNumber(sect.subsections[0].id);
+                    if (firstSubPage) {
+                      tocRows.push({ title: sect.title, page: firstSubPage, isMain: true });
+                    }
+                    // Option B: List sub-items indented (optional, currently strictly listing main items based on your request)
+                    // If you want sub-items, uncomment below:
+                    /*
+                    sect.subsections.forEach(sub => {
+                      const subPage = findPageNumber(sub.id);
+                      if(subPage) tocRows.push({ title: sub.title, page: subPage, isMain: false });
+                    });
+                    */
+                  }
+                  else {
+                    // Regular sections (Abstract, Benefits, etc.)
+                    const pNum = findPageNumber(sect.id);
+                    // Don't list the TOC itself in the TOC
+                    if (sect.id !== 'toc' && pNum) {
+                      tocRows.push({ title: sect.title, page: pNum, isMain: true });
+                    }
+                  }
+                }
+              });
+
+              pageContent = (
+                <div style={{ ...styles.borderFrame, justifyContent: 'flex-start' }}>
+                  <h2 style={{
+                    textAlign: 'center',
+                    fontSize: '20pt',
+                    fontWeight: 'bold',
+                    textDecoration: 'underline',
+                    marginBottom: '30px',
+                    textTransform: 'uppercase'
+                  }}>
+                    INDEX
+                  </h2>
+
+                  <div style={{ width: '100%', padding: '0 20px' }}>
+                    {/* Table Header */}
+                    <div style={{ display: 'flex', borderBottom: '2px solid black', paddingBottom: '5px', marginBottom: '10px', fontWeight: 'bold' }}>
+                      <div style={{ flex: 1, textAlign: 'left', fontSize: '14pt' }}>Topic</div>
+                      <div style={{ width: '80px', textAlign: 'right', fontSize: '14pt' }}>Page No</div>
                     </div>
-                );
+
+                    {/* Table Rows */}
+                    {tocRows.map((row, rIdx) => (
+                      <div key={rIdx} style={{
+                        display: 'flex',
+                        alignItems: 'baseline',
+                        marginBottom: '12px',
+                        fontSize: '13pt'
+                      }}>
+                        {/* Topic Name with dots spacer */}
+                        <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+                          <span style={{ fontWeight: row.isMain ? 'bold' : 'normal', background: '#fff', paddingRight: '5px', zIndex: 1 }}>
+                            {row.title}
+                          </span>
+                          {/* Dotted Leader Line */}
+                          <span style={{ flex: 1, borderBottom: '1px dotted #000', marginBottom: '5px', marginLeft: '5px' }}></span>
+                        </div>
+
+                        {/* Page Number */}
+                        <div style={{ width: '60px', textAlign: 'right', paddingLeft: '10px', background: '#fff', zIndex: 1 }}>
+                          {row.page}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            }
+
+            // --- 6. ALL OTHER PAGES (UPDATED for Sub-headings) ---
+            else {
+              const text = Array.isArray(content) ? content[page.pageIndex] : (content || getDefaultContent(page.sectionId));
+              const isImageSection = section.inputType === 'image';
+              const imgUrl = Array.isArray(content) ? content[0] : content;
+
+              // 1. Identify if this is one of your special sub-heading pages
+              const isSubHeadingPage = ['orgInfo', 'methodologies', 'benefits'].includes(page.sectionId);
+
+              // 2. Define the style based on that check
+              const titleStyle = isSubHeadingPage ? {
+                textAlign: 'left',       // Puts text in top-left corner
+                fontSize: '14pt',        // Smaller font size
+                fontWeight: 'bold',
+                textDecoration: 'none',
+                marginBottom: '20px',
+                marginTop: '0px',
+                width: '100%'
+              } : {
+                textAlign: 'center',     // Keeps other pages (like Abstract) centered
+                fontSize: '18pt',
+                fontWeight: 'bold',
+                textDecoration: 'underline',
+                marginBottom: '30px',
+                marginTop: '10px',
+                textTransform: 'uppercase'
+              };
+
+              pageContent = (
+                <div style={{
+                  ...styles.borderFrame,
+                  justifyContent: 'flex-start',
+                  alignItems: 'stretch',
+                  padding: '40px'
+                }}>
+                  {/* Page Title with dynamic style */}
+                  {page.pageIndex === 0 && (
+                    <h3 style={titleStyle}>
+                      {page.parentTitle ? `${page.parentTitle}` : page.title}
+                    </h3>
+                  )}
+
+                  {/* Subsection Title */}
+                  {page.parentTitle && page.pageIndex === 0 && (
+                    <h4 style={{ fontSize: '14pt', fontWeight: 'bold', marginBottom: '15px' }}>{page.title}</h4>
+                  )}
+
+                  {/* Content */}
+                  {isImageSection ? (
+                    <div style={{ textAlign: 'center' }}>
+                      {imgUrl ? <img src={imgUrl} alt="Diagram" style={{ maxWidth: '100%', maxHeight: '800px' }} /> : 'No image'}
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: '13pt', lineHeight: '1.8', textAlign: 'justify', whiteSpace: 'pre-wrap' }}>
+                      {text}
+                    </div>
+                  )}
+                </div>
+              );
             }
 
             return (
@@ -642,15 +742,15 @@ const StudentDashboard = ({ user, onLogout }) => {
                   {/* Page Number: Centered at the bottom */}
                   {/* Page Number: Centered at the bottom */}
                   {idx > 2 && (
-                    <div style={{ 
-                      position: 'absolute', 
-                      bottom: '30px', 
-                      left: '0', 
-                      width: '100%', 
-                      textAlign: 'center', 
-                      fontSize: '12pt', 
+                    <div style={{
+                      position: 'absolute',
+                      bottom: '30px',
+                      left: '0',
+                      width: '100%',
+                      textAlign: 'center',
+                      fontSize: '12pt',
                       color: 'black',
-                      fontWeight: 'normal' 
+                      fontWeight: 'normal'
                     }}>
                       {idx - 2}
                     </div>
