@@ -581,43 +581,79 @@ const StudentDashboard = ({ user, onLogout }) => {
             }
 
             // --- 6. ALL OTHER PAGES (NOW WITH BORDER) ---
+            // =========================================================
+            // 6. ALL OTHER PAGES (Abstract, Intro, etc.) - FIXED ALIGNMENT
+            // =========================================================
             else {
-              const text = Array.isArray(content) ? content[page.pageIndex] : (content || getDefaultContent(page.sectionId));
-              const isImageSection = section.inputType === 'image';
-              const imgUrl = Array.isArray(content) ? content[0] : content;
+                const text = Array.isArray(content) ? content[page.pageIndex] : (content || getDefaultContent(page.sectionId));
+                const isImageSection = section.inputType === 'image';
+                const imgUrl = Array.isArray(content) ? content[0] : content;
 
-              pageContent = (
-                <div style={styles.borderFrame}>
-                  {page.pageIndex === 0 && (
-                    <h3 style={{ textAlign: 'center', fontSize: '18pt', fontWeight: 'bold', textDecoration: 'underline', marginBottom: '20px', textTransform: 'uppercase' }}>{page.parentTitle ? `${page.parentTitle}` : page.title}</h3>
-                  )}
-                  {page.parentTitle && page.pageIndex === 0 && (
-                    <h4 style={{ fontSize: '14pt', fontWeight: 'bold', marginBottom: '15px' }}>{page.title}</h4>
-                  )}
+                pageContent = (
+                    // FIX: Added justifyContent: 'flex-start' so text stays at the top
+                    <div style={{
+                        ...styles.borderFrame, 
+                        justifyContent: 'flex-start', 
+                        alignItems: 'stretch', 
+                        padding: '40px'
+                    }}>
+                        {/* Page Title */}
+                        {page.pageIndex === 0 && (
+                            <h3 style={{ 
+                                textAlign: 'center', 
+                                fontSize: '18pt', 
+                                fontWeight: 'bold', 
+                                textDecoration: 'underline', 
+                                marginBottom: '30px', 
+                                marginTop: '10px', 
+                                textTransform: 'uppercase' 
+                            }}>
+                                {page.parentTitle ? `${page.parentTitle}` : page.title}
+                            </h3>
+                        )}
+                        
+                        {/* Subsection Title */}
+                        {page.parentTitle && page.pageIndex === 0 && (
+                             <h4 style={{ fontSize: '14pt', fontWeight: 'bold', marginBottom: '15px' }}>{page.title}</h4>
+                        )}
 
-                  {isImageSection ? (
-                    <div style={{ textAlign: 'center', flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      {imgUrl ? (
-                        <img src={imgUrl} alt="Diagram" style={{ maxWidth: '100%', maxHeight: '800px', border: '1px solid #ddd' }} />
-                      ) : (
-                        <p style={{ fontStyle: 'italic', color: '#999' }}>No image uploaded.</p>
-                      )}
+                        {/* Content Logic */}
+                        {isImageSection ? (
+                            <div style={{ textAlign: 'center', flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                {imgUrl ? (
+                                    <img src={imgUrl} alt="Diagram" style={{ maxWidth: '100%', maxHeight: '800px', border: '1px solid #ddd' }} />
+                                ) : (
+                                    <p style={{ fontStyle: 'italic', color: '#999' }}>No image uploaded.</p>
+                                )}
+                            </div>
+                        ) : (
+                            <div style={{ fontSize: '13pt', lineHeight: '1.8', textAlign: 'justify', whiteSpace: 'pre-wrap' }}>
+                                {text}
+                            </div>
+                        )}
                     </div>
-                  ) : (
-                    <div style={{ fontSize: '13pt', lineHeight: '1.8', textAlign: 'justify', whiteSpace: 'pre-wrap' }}>
-                      {text}
-                    </div>
-                  )}
-                </div>
-              );
+                );
             }
 
             return (
               <div key={idx} className="flipper-page-slot">
                 <div className="report-page-a4" style={styles.a4}>
                   {pageContent}
+                  {/* Page Number: Centered at the bottom */}
+                  {/* Page Number: Centered at the bottom */}
                   {idx > 2 && (
-                    <div style={{ position: 'absolute', bottom: '50px', right: '50px', fontSize: '11pt', fontWeight: 'bold' }}>{idx - 2}</div>
+                    <div style={{ 
+                      position: 'absolute', 
+                      bottom: '30px', 
+                      left: '0', 
+                      width: '100%', 
+                      textAlign: 'center', 
+                      fontSize: '12pt', 
+                      color: 'black',
+                      fontWeight: 'normal' 
+                    }}>
+                      {idx - 2}
+                    </div>
                   )}
                 </div>
               </div>
