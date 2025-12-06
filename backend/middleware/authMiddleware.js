@@ -18,13 +18,19 @@ const protect = async (req, res, next) => {
     res.status(401).json({ message: 'Not authorized, no token' });
   }
 };
-
 const getUserProfile = async (req, res, next) => {
   try {
     const db = admin.firestore();
+    // 1. Use the UID from the token to find the doc
     const userDoc = await db.collection('users').doc(req.user.uid).get();
+    
     if (userDoc.exists) {
-      req.user = userDoc.data();
+      // 2. FIX: Merge the database data WITH the UID
+      // This ensures req.user.uid exists for the next controller
+      req.user = { 
+        ...userDoc.data(), 
+        uid: userDoc.id 
+      };
       next();
     } else {
       res.status(404).json({ message: 'User profile not found in Firestore' });

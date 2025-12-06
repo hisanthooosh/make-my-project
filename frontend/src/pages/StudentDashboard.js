@@ -154,7 +154,17 @@ const StudentDashboard = ({ user, onLogout }) => {
         }
       }
       else if (section.inputType === 'image') {
-        pages.push({ id: `${section.id}_0`, title: section.title, pageIndex: 0, sectionId: section.id });
+        const content = project.sections?.[section.id]?.content;
+
+        // Calculate how many images/pages we have
+        let count = 1;
+        if (Array.isArray(content) && content.length > 0) count = content.length;
+        else if (content && typeof content === 'string') count = 1;
+
+        // Generate a page for each image
+        for (let i = 0; i < count; i++) {
+          pages.push({ id: `${section.id}_${i}`, title: section.title, pageIndex: i, sectionId: section.id });
+        }
       }
       else {
         // Normal Text Paginated
@@ -197,20 +207,32 @@ const StudentDashboard = ({ user, onLogout }) => {
 
   // --- Saving Logic ---
   const handleSaveSection = async (status) => {
-    // NEW CHECK: Prevent saving if lines are over limit
-    if (editingSectionId !== 'titlePage' && editingSectionId !== 'weeklyOverview' && editingSectionId !== 'acknowledgement') {
+
+    // 1. Get the current section details to check its type
+    const currentSection = allSections.find(s => s.id === editingSectionId);
+
+    // 2. NEW CHECK: Only check line limits for TEXT sections (Not images, not tables)
+    if (
+      editingSectionId !== 'titlePage' &&
+      editingSectionId !== 'weeklyOverview' &&
+      editingSectionId !== 'acknowledgement' &&
+      currentSection?.inputType !== 'image' // <--- THIS FIXES THE CRASH
+    ) {
       for (let i = 0; i < paginatedContent.length; i++) {
-        // Same logic as editor to check limits
         const isFirstPage = i === 0;
         const hasSubheading = isFirstPage && ['orgInfo', 'methodologies', 'benefits', 'intro_main', 'intro_modules'].includes(editingSectionId);
-        const stats = calculateLineStats(paginatedContent[i], hasSubheading);
+
+        // Safety check: ensure we are checking a string
+        const textToCheck = typeof paginatedContent[i] === 'string' ? paginatedContent[i] : '';
+        const stats = calculateLineStats(textToCheck, hasSubheading);
 
         if (stats.isOver) {
           setError(`Error on Page ${i + 1}: Text is too long (${stats.lines}/${stats.max} lines). Please move text to a new page.`);
-          return; // STOP HERE, DO NOT SAVE
+          return; // Stop saving
         }
       }
     }
+
     setSaveLoading(true);
     let contentToSave;
 
@@ -240,7 +262,7 @@ const StudentDashboard = ({ user, onLogout }) => {
     setSaveLoading(false);
   };
 
-  // --- Image Upload ---
+  // --- Image Upload (Updated for Multiple Screenshots) ---
   const handleImageUpload = async (file) => {
     if (!file) return;
     setSaveLoading(true);
@@ -248,7 +270,15 @@ const StudentDashboard = ({ user, onLogout }) => {
     formData.append('images', file);
     try {
       const { data } = await api.post('/projects/upload-images', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
-      setPaginatedContent([data.images[0]]);
+      const newUrl = data.images[0];
+
+      if (editingSectionId === 'screenshots') {
+        // APPEND: Add to the existing list of images
+        setPaginatedContent(prev => [...prev, newUrl]);
+      } else {
+        // REPLACE: Standard behavior for Certificate/Diagrams (only 1 image)
+        setPaginatedContent([newUrl]);
+      }
       setSuccess('Image uploaded! Click Save to confirm.');
     } catch (err) {
       setError('Upload failed.');
@@ -436,6 +466,42 @@ const StudentDashboard = ({ user, onLogout }) => {
 
     // 4. Image Uploaders
     if (section.inputType === 'image') {
+
+      // A. Special UI for Screenshots (Multiple Pages)
+      if (editingSectionId === 'screenshots') {
+        return (
+          <div className="section-image-uploader">
+            <p>Upload screenshots of your project. Each image will be added as a new page.</p>
+
+            {/* List existing images with Delete buttons */}
+            {paginatedContent.map((url, idx) => (
+              <div key={idx} className="page-editor-group" style={{ marginBottom: '20px', borderBottom: '1px solid #eee', paddingBottom: '10px' }}>
+                <h4>Page {idx + 1}</h4>
+                <img src={url} alt={`Screenshot ${idx + 1}`} className="editor-image-preview" style={{ display: 'block', marginBottom: '10px', maxHeight: '200px' }} />
+                <button
+                  className="delete-btn"
+                  style={{ background: '#ff4444', color: 'white', border: 'none', padding: '5px 10px', cursor: 'pointer' }}
+                  onClick={() => {
+                    const newP = [...paginatedContent];
+                    newP.splice(idx, 1);
+                    setPaginatedContent(newP);
+                  }}
+                >
+                  Remove This Screenshot
+                </button>
+              </div>
+            ))}
+
+            {/* Add New Uploader */}
+            <div style={{ marginTop: '20px', background: '#f0f0f0', padding: '15px', borderRadius: '5px' }}>
+              <h4>+ Add Another Screenshot</h4>
+              <input type="file" accept="image/*" onChange={e => handleImageUpload(e.target.files[0])} />
+            </div>
+          </div>
+        );
+      }
+
+      // B. Default Single Image (Certificate Scan, etc.)
       return (
         <div className="section-image-uploader">
           <p>{section.id === 'certificateScan' ? 'Upload a scan of your signed certificate.' : 'Upload your diagram.'}</p>
@@ -640,7 +706,7 @@ const StudentDashboard = ({ user, onLogout }) => {
 
             // --- 3. CERTIFICATE (SCAN) ---
             else if (page.sectionId === 'certificateScan') {
-              const imgUrl = Array.isArray(content) ? content[0] : content;
+              const imgUrl = Array.isArray(content) ? content[page.pageIndex] : content;
               pageContent = (
                 <div style={{ ...styles.borderFrame, justifyContent: 'center', padding: '20px' }}>
                   {imgUrl ? (

@@ -2,7 +2,13 @@
 const admin = require('firebase-admin');
 const cloudinary = require('cloudinary').v2;
 
-// (The streamUpload function stays the same)
+// --- Helper: Clean Data for Firestore ---
+// Removes undefined values to prevent Firestore crashes.
+// NOTE: We only use this on raw data (strings/objects), NOT on Firestore timestamps!
+const removeUndefined = (obj) => {
+  return JSON.parse(JSON.stringify(obj));
+};
+
 const streamUpload = (fileBuffer) => {
   return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
@@ -16,65 +22,66 @@ const streamUpload = (fileBuffer) => {
   });
 };
 
-// --- NEW FUNCTION: updateProjectSection ---
-// @desc    Student saves/updates a single section of their project
-// @route   POST /api/projects/update-section
-// @access  Private (Student Only)
+// --- updateProjectSection ---
 const updateProjectSection = async (req, res) => {
   try {
     const db = admin.firestore();
     const studentUid = req.user.uid;
     
-    // We get the specific section, its content, AND the new status
+    // Get data
     const { section, content, status } = req.body; 
     
+    // Strict validation
     if (!section || content === undefined || !status) {
       return res.status(400).json({ message: 'Section, content, and status are required' });
     }
 
-    // Find the student's project document
+    // 1. Check if the project exists
     const projectQuery = await db.collection('projects').where('studentUid', '==', studentUid).limit(1).get();
     
-    let projectRef;
-    let existingSections = {};
-
     if (projectQuery.empty) {
-      // If no project, create one and add this first section
-      const newProjectData = {
+      // --- CREATE NEW PROJECT ---
+      // Fix: We sanitize the raw data FIRST, then add the timestamp manually.
+      // This prevents JSON.stringify from destroying the serverTimestamp object.
+      
+      const safeData = removeUndefined({
         studentUid: studentUid,
         mentorUid: req.user.assignedMentorId || null,
-        sections: {}, // Sections start empty
-        images: [], // Images start empty
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        sections: {
+          [section]: { // Create the first section immediately
+            content: content,
+            status: status
+          }
+        },
+        images: []
+      });
+
+      // Now add the timestamp (safely)
+      const finalData = {
+        ...safeData,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
       };
-      // Create the new project document
-      const docRef = await db.collection('projects').add(newProjectData);
-      projectRef = db.collection('projects').doc(docRef.id);
+
+      await db.collection('projects').add(finalData);
 
     } else {
-      // Project exists, get its reference and existing sections
+      // --- UPDATE EXISTING PROJECT ---
       const docId = projectQuery.docs[0].id;
-      projectRef = db.collection('projects').doc(docId);
-      existingSections = projectQuery.docs[0].data().sections || {};
+      const projectRef = db.collection('projects').doc(docId);
+
+      // Clean the content to ensure no undefined values are inside
+      const safeContent = removeUndefined(content);
+
+      // Use Dot Notation to update ONLY the specific fields.
+      // This creates 'sections.intro' if it doesn't exist, or updates it if it does.
+      const updates = {
+        [`sections.${section}.content`]: safeContent,
+        [`sections.${section}.status`]: status,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      };
+
+      await projectRef.update(updates);
     }
-
-    // --- Safe Update Logic ---
-    // 1. Get the existing data for the section (if any)
-    const existingSectionData = existingSections[section] || {};
-
-    // 2. Merge old data with new data (content and status)
-    const newSectionData = {
-      ...existingSectionData, // Keeps old comments
-      content: content,
-      status: status // 'draft' or 'pending'
-    };
-
-    // 3. Use "dot notation" to update *only* this section in the 'sections' map
-    const updateKey = `sections.${section}`;
-    await projectRef.update({
-      [updateKey]: newSectionData,
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-    });
 
     res.status(200).json({ message: `Section '${section}' updated successfully` });
 
@@ -85,7 +92,7 @@ const updateProjectSection = async (req, res) => {
 };
 
 
-// --- getMyProject (This stays the same, it's already perfect) ---
+// --- getMyProject ---
 const getMyProject = async (req, res) => {
   try {
     const db = admin.firestore();
@@ -96,9 +103,8 @@ const getMyProject = async (req, res) => {
       return res.status(404).json({ message: 'No project found' });
     }
 
-    // Send the whole project doc, including the new 'sections' object
     const project = projectQuery.docs[0].data();
-    project.id = projectQuery.docs[0].id; // Also send the document ID
+    project.id = projectQuery.docs[0].id;
     res.status(200).json(project);
 
   } catch (error) {
@@ -107,7 +113,7 @@ const getMyProject = async (req, res) => {
   }
 };
 
-// --- NEW FUNCTION: Upload project images (separate from sections) ---
+// --- uploadProjectImages ---
 const uploadProjectImages = async (req, res) => {
   try {
     const db = admin.firestore();
@@ -123,36 +129,41 @@ const uploadProjectImages = async (req, res) => {
       return res.status(400).json({ message: 'No files uploaded' });
     }
 
-    // Find the project and add these images
     const projectQuery = await db.collection('projects').where('studentUid', '==', studentUid).limit(1).get();
     
     if (projectQuery.empty) {
-      // This shouldn't happen if they save a section first, but as a fallback:
-      const newProjectData = {
+      // --- SAFE CREATE FOR IMAGES ---
+      const safeData = removeUndefined({
         studentUid: studentUid,
         mentorUid: req.user.assignedMentorId || null,
         sections: {},
-        images: imageUrls, // Save images here
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        images: imageUrls
+      });
+
+      const finalData = {
+        ...safeData,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
       };
-      await db.collection('projects').add(newProjectData);
+
+      await db.collection('projects').add(finalData);
     } else {
       const docId = projectQuery.docs[0].id;
       await db.collection('projects').doc(docId).update({
-        images: admin.firestore.FieldValue.arrayUnion(...imageUrls) // Add to existing images
+        images: admin.firestore.FieldValue.arrayUnion(...imageUrls),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
       });
     }
     
     res.status(200).json({ message: 'Images uploaded successfully', images: imageUrls });
 
-  } catch (error) { // <-- THIS LINE IS NOW CORRECT
+  } catch (error) {
     console.error('Error uploading images:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };
 
 module.exports = {
-  updateProjectSection, // <-- Renamed/new
+  updateProjectSection,
   getMyProject,
-  uploadProjectImages // <-- New
+  uploadProjectImages
 };
