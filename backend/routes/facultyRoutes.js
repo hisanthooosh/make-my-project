@@ -7,7 +7,8 @@ const { requireAuth, facultyCheck } = require('../middleware/authMiddleware');
 const {
   getMyStudents,
   getStudentProject,
-  submitReview
+  submitReview,
+  approveAllSections // <--- Add this to the list
 } = require('../controllers/facultyController');
 
 // All routes in this file are for Faculty only
@@ -21,5 +22,7 @@ router.get('/student-project/:studentId', getStudentProject);
 
 // POST route to submit a review for a section
 router.post('/review-section', submitReview);
+// POST route to approve the entire project at once
+router.post('/approve-all', approveAllSections);
 
 module.exports = router;

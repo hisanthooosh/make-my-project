@@ -114,9 +114,57 @@ const submitReview = async (req, res) => {
   }
 };
 
+// @desc    Approve ALL sections of a project at once
+// @route   POST /api/faculty/approve-all
+// @access  Private (Faculty Only)
+const approveAllSections = async (req, res) => {
+  try {
+    const db = admin.firestore();
+    const facultyUid = req.user.uid;
+    const { projectId } = req.body;
 
+    if (!projectId) {
+      return res.status(400).json({ message: 'Project ID is required.' });
+    }
+
+    const projectRef = db.collection('projects').doc(projectId);
+    const projectDoc = await projectRef.get();
+
+    if (!projectDoc.exists) {
+      return res.status(404).json({ message: 'Project not found.' });
+    }
+
+    // Security Check
+    const projectData = projectDoc.data();
+    if (projectData.mentorUid !== facultyUid) {
+      return res.status(403).json({ message: 'Not authorized to review this project.' });
+    }
+
+    // Construct update object
+    const currentSections = projectData.sections || {};
+    const updates = {};
+
+    // Iterate over all existing sections and set status to approved
+    Object.keys(currentSections).forEach(sectionKey => {
+      updates[`sections.${sectionKey}.status`] = 'approved';
+    });
+
+    if (Object.keys(updates).length === 0) {
+      return res.status(200).json({ message: 'No sections to approve.' });
+    }
+
+    await projectRef.update(updates);
+
+    res.status(200).json({ message: 'All sections approved successfully.' });
+
+  } catch (error) {
+    console.error('Error in approveAllSections:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
 module.exports = {
   getMyStudents,
   getStudentProject,
-  submitReview
+  submitReview,
+  approveAllSections // <--- ADD THIS LINE
 };
