@@ -81,6 +81,28 @@ const StudentDashboard = ({ user, onLogout }) => {
 
   // State for Weekly Overview
   const [weeklyData, setWeeklyData] = useState([]);
+  // --- CALCULATE PROGRESS STATS (NEW) ---
+  const progressStats = useMemo(() => {
+    const total = allSections.length;
+    const drafts = [];
+    const submitted = []; // 'pending' status
+    const approved = [];
+
+    allSections.forEach(section => {
+      // Safely access status
+      const status = project?.sections?.[section.id]?.status;
+
+      if (status === 'draft') drafts.push(section.title);
+      else if (status === 'pending') submitted.push(section.title);
+      else if (status === 'approved') approved.push(section.title);
+    });
+
+    return {
+      draft: { count: drafts.length, percent: Math.round((drafts.length / total) * 100), list: drafts },
+      submitted: { count: submitted.length, percent: Math.round((submitted.length / total) * 100), list: submitted },
+      approved: { count: approved.length, percent: Math.round((approved.length / total) * 100), list: approved }
+    };
+  }, [project]);
 
   // --- Data Fetching ---
   useEffect(() => {
@@ -1031,6 +1053,49 @@ const StudentDashboard = ({ user, onLogout }) => {
     <div className="student-dashboard">
       <header className="student-header">
         <h1>Student Dashboard</h1>
+        {/* --- NEW: PROGRESS TRACKER DROPDOWNS --- */}
+        <div className="header-progress-bar">
+          
+          {/* 1. DRAFT DROPDOWN */}
+          <div className="progress-dropdown draft">
+            <div className="progress-label">Drafting: {progressStats.draft.percent}%</div>
+            <div className="progress-menu">
+              <div className="menu-header">Drafts ({progressStats.draft.count})</div>
+              <ul>
+                {progressStats.draft.list.length > 0 ? (
+                  progressStats.draft.list.map((item, idx) => <li key={idx}>{item}</li>)
+                ) : ( <li className="empty">No drafts yet</li> )}
+              </ul>
+            </div>
+          </div>
+
+          {/* 2. SUBMITTED DROPDOWN */}
+          <div className="progress-dropdown submitted">
+            <div className="progress-label">Submitting: {progressStats.submitted.percent}%</div>
+            <div className="progress-menu">
+              <div className="menu-header">Submitted ({progressStats.submitted.count})</div>
+              <ul>
+                {progressStats.submitted.list.length > 0 ? (
+                  progressStats.submitted.list.map((item, idx) => <li key={idx}>{item}</li>)
+                ) : ( <li className="empty">Nothing submitted</li> )}
+              </ul>
+            </div>
+          </div>
+
+          {/* 3. APPROVED DROPDOWN */}
+          <div className="progress-dropdown approved">
+            <div className="progress-label">Approval: {progressStats.approved.percent}%</div>
+            <div className="progress-menu">
+              <div className="menu-header">Approved ({progressStats.approved.count})</div>
+              <ul>
+                {progressStats.approved.list.length > 0 ? (
+                  progressStats.approved.list.map((item, idx) => <li key={idx}>{item}</li>)
+                ) : ( <li className="empty">No approvals yet</li> )}
+              </ul>
+            </div>
+          </div>
+
+        </div>
         <div className="header-user-info"><span>{user.name}</span><button onClick={onLogout} className="logout-button">Logout</button></div>
       </header>
       <main className="student-main">

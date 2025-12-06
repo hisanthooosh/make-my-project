@@ -3,10 +3,8 @@ const admin = require('firebase-admin');
 const cloudinary = require('cloudinary').v2;
 
 // --- Helper: Clean Data for Firestore ---
-// Removes undefined values to prevent Firestore crashes.
-// NOTE: We only use this on raw data (strings/objects), NOT on Firestore timestamps!
-const removeUndefined = (obj) => {
-  return JSON.parse(JSON.stringify(obj));
+const cleanData = (data) => {
+  return JSON.parse(JSON.stringify(data));
 };
 
 const streamUpload = (fileBuffer) => {
@@ -28,39 +26,47 @@ const updateProjectSection = async (req, res) => {
     const db = admin.firestore();
     const studentUid = req.user.uid;
     
-    // Get data
-    const { section, content, status } = req.body; 
+    console.log("updateProjectSection called by:", studentUid);
     
-    // Strict validation
-    if (!section || content === undefined || !status) {
-      return res.status(400).json({ message: 'Section, content, and status are required' });
+    // Get data
+    let { section, content, status } = req.body; 
+    
+    if (!section) {
+      return res.status(400).json({ success: false, message: 'Section name is required' });
     }
 
-    // 1. Check if the project exists
+    // --- CRITICAL FIX: FLATTEN ARRAYS ---
+    // The log showed content: [ ["url"], "url" ]. Firestore CRASHES on nested arrays.
+    // This line forces it to become [ "url", "url" ]
+    if (Array.isArray(content)) {
+        console.log("Flattening nested array content...");
+        content = content.flat(Infinity);
+    }
+
+    // Sanitize everything
+    const safeSection = String(section).trim();
+    const safeContent = content === undefined ? "" : cleanData(content);
+    const safeStatus = status === undefined ? "pending" : cleanData(status);
+
+    // Find the project
     const projectQuery = await db.collection('projects').where('studentUid', '==', studentUid).limit(1).get();
     
     if (projectQuery.empty) {
       // --- CREATE NEW PROJECT ---
-      // Fix: We sanitize the raw data FIRST, then add the timestamp manually.
-      // This prevents JSON.stringify from destroying the serverTimestamp object.
-      
-      const safeData = removeUndefined({
+      const newProjectData = {
         studentUid: studentUid,
         mentorUid: req.user.assignedMentorId || null,
         sections: {
-          [section]: { // Create the first section immediately
-            content: content,
-            status: status
+          [safeSection]: { 
+            content: safeContent,
+            status: safeStatus
           }
         },
         images: []
-      });
-
-      // Now add the timestamp (safely)
-      const finalData = {
-        ...safeData,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp()
       };
+
+      const finalData = cleanData(newProjectData);
+      finalData.updatedAt = admin.firestore.FieldValue.serverTimestamp();
 
       await db.collection('projects').add(finalData);
 
@@ -69,25 +75,26 @@ const updateProjectSection = async (req, res) => {
       const docId = projectQuery.docs[0].id;
       const projectRef = db.collection('projects').doc(docId);
 
-      // Clean the content to ensure no undefined values are inside
-      const safeContent = removeUndefined(content);
-
-      // Use Dot Notation to update ONLY the specific fields.
-      // This creates 'sections.intro' if it doesn't exist, or updates it if it does.
-      const updates = {
-        [`sections.${section}.content`]: safeContent,
-        [`sections.${section}.status`]: status,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      // Use 'set' with merge: true for safety
+      const dataToMerge = {
+        sections: {
+          [safeSection]: {
+            content: safeContent,
+            status: safeStatus
+          }
+        },
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
       };
 
-      await projectRef.update(updates);
+      await projectRef.set(dataToMerge, { merge: true });
     }
 
-    res.status(200).json({ message: `Section '${section}' updated successfully` });
+    console.log("Success: Section updated.");
+    res.status(200).json({ success: true, message: `Section '${safeSection}' updated successfully` });
 
   } catch (error) {
-    console.error('Error in updateProjectSection:', error);
-    res.status(500).json({ message: 'Server error while updating section' });
+    console.error('CRITICAL ERROR in updateProjectSection:', error);
+    res.status(500).json({ success: false, message: 'Server error', error: error.message });
   }
 };
 
@@ -132,22 +139,21 @@ const uploadProjectImages = async (req, res) => {
     const projectQuery = await db.collection('projects').where('studentUid', '==', studentUid).limit(1).get();
     
     if (projectQuery.empty) {
-      // --- SAFE CREATE FOR IMAGES ---
-      const safeData = removeUndefined({
+      // Safe create for images
+      const projectData = {
         studentUid: studentUid,
         mentorUid: req.user.assignedMentorId || null,
         sections: {},
         images: imageUrls
-      });
-
-      const finalData = {
-        ...safeData,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp()
       };
+
+      const finalData = cleanData(projectData);
+      finalData.updatedAt = admin.firestore.FieldValue.serverTimestamp();
 
       await db.collection('projects').add(finalData);
     } else {
       const docId = projectQuery.docs[0].id;
+      // We use arrayUnion here to add new images to the list
       await db.collection('projects').doc(docId).update({
         images: admin.firestore.FieldValue.arrayUnion(...imageUrls),
         updatedAt: admin.firestore.FieldValue.serverTimestamp()
