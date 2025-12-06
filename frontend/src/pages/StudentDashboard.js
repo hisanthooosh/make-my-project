@@ -136,8 +136,22 @@ const StudentDashboard = ({ user, onLogout }) => {
       const content = project.sections?.[section.id]?.content;
 
       // Special handling for TitlePage and Weekly
-      if (section.id === 'titlePage' || section.id === 'weeklyOverview') {
-        pages.push({ id: `${section.id}_0`, title: section.title, pageIndex: 0, sectionId: section.id });
+      // [REPLACE THE PREVIOUS weeklyOverview CHECK WITH THIS]
+      if (section.id === 'weeklyOverview') {
+        const ROWS_PER_PAGE = 12; // Max rows per page
+        // Use local weeklyData state if available, otherwise project content
+        const data = weeklyData.length > 0 ? weeklyData : (project.sections?.weeklyOverview?.content || []);
+        const totalRows = data.length > 0 ? data.length : 1;
+        const pageCount = Math.ceil(totalRows / ROWS_PER_PAGE);
+
+        for (let i = 0; i < pageCount; i++) {
+          pages.push({
+            id: `weeklyOverview_${i}`,
+            title: section.title,
+            pageIndex: i,
+            sectionId: section.id
+          });
+        }
       }
       else if (section.inputType === 'image') {
         pages.push({ id: `${section.id}_0`, title: section.title, pageIndex: 0, sectionId: section.id });
@@ -314,20 +328,82 @@ const StudentDashboard = ({ user, onLogout }) => {
     }
 
     // 2. Weekly Overview Editor
+    // [REPLACE THE ENTIRE weeklyOverview EDITOR BLOCK]
     if (editingSectionId === 'weeklyOverview') {
       return (
         <div className="weekly-editor">
-          <button className="form-button add-page-btn" onClick={addWeekRow} style={{ marginBottom: '10px' }}>+ Add Week</button>
+          {/* --- GENERATOR CONTROLS --- */}
+          <div style={{ background: '#f0f0f0', padding: '15px', marginBottom: '20px', borderRadius: '8px' }}>
+            <h4>Auto-Generate Schedule</h4>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', marginBottom: '10px' }}>
+              <div>
+                <label style={{ fontSize: '12px', fontWeight: 'bold' }}>Start Date</label>
+                <input type="date" id="gen-start" className="form-input" />
+              </div>
+              <div>
+                <label style={{ fontSize: '12px', fontWeight: 'bold' }}>Total Weeks</label>
+                <input type="number" id="gen-weeks" className="form-input" defaultValue="4" />
+              </div>
+              <div>
+                <label style={{ fontSize: '12px', fontWeight: 'bold' }}>Working Days/Week</label>
+                <input type="number" id="gen-days" className="form-input" defaultValue="5" />
+              </div>
+            </div>
+            <button className="form-button" style={{ background: '#007bff' }} onClick={() => {
+              const startVal = document.getElementById('gen-start').value;
+              const weeksVal = parseInt(document.getElementById('gen-weeks').value) || 4;
+              const daysVal = parseInt(document.getElementById('gen-days').value) || 5;
+
+              if (!startVal) return alert('Please select a start date');
+
+              let currentDate = new Date(startVal);
+              const newRows = [];
+              const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+              for (let w = 1; w <= weeksVal; w++) {
+                let daysAdded = 0;
+                while (daysAdded < daysVal) {
+                  const dayIndex = currentDate.getDay();
+                  // Skip Sunday (0). You can customize this if needed.
+                  if (dayIndex !== 0) {
+                    newRows.push({
+                      week: `Week ${w}`,
+                      date: currentDate.toISOString().split('T')[0], // Format YYYY-MM-DD
+                      day: dayNames[dayIndex],
+                      topic: '' // User fills this in
+                    });
+                    daysAdded++;
+                  }
+                  // Move to next day
+                  currentDate.setDate(currentDate.getDate() + 1);
+                }
+                // Skip to next Monday if we finished a week mid-week (optional logic, keeps weeks clean)
+                while (currentDate.getDay() !== 1) {
+                  currentDate.setDate(currentDate.getDate() + 1);
+                }
+              }
+              setWeeklyData(newRows);
+            }}>
+              Generate Table
+            </button>
+          </div>
+
+          {/* --- EDITABLE TABLE --- */}
           <div className="weekly-table-container">
             {weeklyData.map((row, index) => (
-              <div key={index} className="weekly-row-edit" style={{ display: 'flex', gap: '10px', marginBottom: '10px', borderBottom: '1px solid #eee', paddingBottom: '10px' }}>
-                <input placeholder="Week" value={row.week} onChange={e => updateWeekRow(index, 'week', e.target.value)} style={{ width: '80px' }} />
-                <input type="date" value={row.date} onChange={e => updateWeekRow(index, 'date', e.target.value)} />
-                <input placeholder="Day" value={row.day} onChange={e => updateWeekRow(index, 'day', e.target.value)} style={{ width: '80px' }} />
-                <input placeholder="Topic" value={row.topic} onChange={e => updateWeekRow(index, 'topic', e.target.value)} style={{ flex: 1 }} />
-                <button onClick={() => removeWeekRow(index)} style={{ background: 'red', color: 'white', border: 'none', cursor: 'pointer' }}>X</button>
+              <div key={index} className="weekly-row-edit" style={{ display: 'flex', gap: '10px', marginBottom: '5px', alignItems: 'center', borderBottom: '1px solid #eee', paddingBottom: '5px' }}>
+                <div style={{ width: '80px', fontSize: '12px', fontWeight: 'bold' }}>{row.week}</div>
+                <div style={{ width: '90px', fontSize: '12px' }}>{row.date}</div>
+                <div style={{ width: '80px', fontSize: '12px', color: '#555' }}>{row.day}</div>
+                <input
+                  placeholder="Enter Topic / Activity..."
+                  value={row.topic}
+                  onChange={e => updateWeekRow(index, 'topic', e.target.value)}
+                  style={{ flex: 1, padding: '5px' }}
+                />
               </div>
             ))}
+            {weeklyData.length === 0 && <p style={{ textAlign: 'center', color: '#888' }}>Use the controls above to generate your schedule.</p>}
           </div>
         </div>
       );
@@ -550,28 +626,49 @@ const StudentDashboard = ({ user, onLogout }) => {
                 </div>
               );
             }
-            // --- 5. WEEKLY OVERVIEW ---
+            // [REPLACE THE WEEKLY OVERVIEW PREVIEW BLOCK]
             else if (page.sectionId === 'weeklyOverview') {
-              const weeks = Array.isArray(content) ? content : getDefaultContent('weeklyOverview');
+              const ROWS_PER_PAGE = 12; // Must match the number in Step 1
+              const allRows = Array.isArray(content) ? content : getDefaultContent('weeklyOverview');
+
+              // SLICE DATA: Only show rows for this specific page
+              const start = page.pageIndex * ROWS_PER_PAGE;
+              const end = start + ROWS_PER_PAGE;
+              const pageRows = allRows.slice(start, end);
+
               pageContent = (
-                <div style={styles.borderFrame}>
-                  <h3 style={{ textAlign: 'center', fontSize: '16pt', fontWeight: 'bold', textDecoration: 'underline' }}>WEEKLY OVERVIEW OF INTERNSHIP ACTIVITIES</h3>
-                  <table style={styles.table}>
+                <div style={{
+                  ...styles.borderFrame,
+                  justifyContent: 'flex-start',
+                  paddingTop: '40px'
+                }}>
+                  <h3 style={{
+                    fontSize: '18pt',
+                    fontWeight: 'bold',
+                    textDecoration: 'underline',
+                    marginBottom: '20px',
+                    textTransform: 'uppercase'
+                  }}>
+                    {page.pageIndex === 0 ? 'WEEKLY OVERVIEW' : 'WEEKLY OVERVIEW (Cont.)'}
+                  </h3>
+
+                  <table style={{ ...styles.table, marginTop: '10px', fontSize: '11pt' }}>
                     <thead>
                       <tr>
                         <th style={{ ...styles.th, width: '15%' }}>Week</th>
-                        <th style={{ ...styles.th, width: '15%' }}>Date</th>
-                        <th style={{ ...styles.th, width: '15%' }}>Day</th>
-                        <th style={{ ...styles.th, width: '55%' }}>Name of the Topic / Module Completed</th>
+                        <th style={{ ...styles.th, width: '20%' }}>Date / Day</th>
+                        <th style={styles.th}>Topic / Activity</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {weeks.map((row, i) => (
+                      {pageRows.map((r, i) => (
                         <tr key={i}>
-                          <td style={styles.td}>{row.week}</td>
-                          <td style={styles.td}>{row.date}</td>
-                          <td style={styles.td}>{row.day}</td>
-                          <td style={styles.td}>{row.topic}</td>
+                          <td style={{ ...styles.td, textAlign: 'center', fontWeight: 'bold' }}>{r.week}</td>
+                          <td style={styles.td}>
+                            <div style={{ fontWeight: 'bold' }}>{r.date}</div>
+                            <div style={{ fontSize: '10pt', fontStyle: 'italic' }}>{r.day}</div>
+                          </td>
+                          <td style={styles.td}>{r.topic}</td>
                         </tr>
                       ))}
                     </tbody>
