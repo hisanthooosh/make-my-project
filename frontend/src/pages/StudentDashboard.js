@@ -197,6 +197,20 @@ const StudentDashboard = ({ user, onLogout }) => {
 
   // --- Saving Logic ---
   const handleSaveSection = async (status) => {
+    // NEW CHECK: Prevent saving if lines are over limit
+    if (editingSectionId !== 'titlePage' && editingSectionId !== 'weeklyOverview' && editingSectionId !== 'acknowledgement') {
+      for (let i = 0; i < paginatedContent.length; i++) {
+        // Same logic as editor to check limits
+        const isFirstPage = i === 0;
+        const hasSubheading = isFirstPage && ['orgInfo', 'methodologies', 'benefits', 'intro_main', 'intro_modules'].includes(editingSectionId);
+        const stats = calculateLineStats(paginatedContent[i], hasSubheading);
+
+        if (stats.isOver) {
+          setError(`Error on Page ${i + 1}: Text is too long (${stats.lines}/${stats.max} lines). Please move text to a new page.`);
+          return; // STOP HERE, DO NOT SAVE
+        }
+      }
+    }
     setSaveLoading(true);
     let contentToSave;
 
@@ -431,21 +445,87 @@ const StudentDashboard = ({ user, onLogout }) => {
       );
     }
 
-    // 5. Standard Text Editor
+    // --- PASTE YOUR NEW CODE HERE (BELOW) ---
+
+    // 3.5. Acknowledgement (LOCKED / READ ONLY)
+    if (editingSectionId === 'acknowledgement') {
+      return (
+        <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
+          <h3>Acknowledgement is Auto-Generated</h3>
+          <p>This section automatically uses your Name, Roll Number, and Company Name.</p>
+          <p>You do not need to type anything here.</p>
+          <div style={{ marginTop: '20px', padding: '15px', background: '#f9f9f9', border: '1px solid #ddd', textAlign: 'left', fontSize: '0.9rem' }}>
+            <strong>Preview:</strong><br />
+            I express my deep sense of gratitude to... (Standard Text)<br /><br />
+            Student: {titlePageData.studentName}<br />
+            Roll No: {titlePageData.rollNo}
+          </div>
+        </div>
+      );
+    }
+
+    // 5. Standard Text Editor (WITH LINE LIMITS)
     return (
       <div className="paginated-editor">
-        {paginatedContent.map((text, i) => (
-          <div key={i} className="page-editor-group">
-            <h4>Page {i + 1}</h4>
-            <textarea className="form-textarea" value={text} onChange={e => {
-              const newP = [...paginatedContent]; newP[i] = e.target.value; setPaginatedContent(newP);
-            }} />
-            <button onClick={() => {
-              const newP = [...paginatedContent]; newP.splice(i, 1); setPaginatedContent(newP);
-            }} disabled={paginatedContent.length === 1}>Remove Page</button>
-          </div>
-        ))}
-        <button className="form-button add-page-btn" onClick={() => setPaginatedContent([...paginatedContent, ''])}>+ Add Page</button>
+        {paginatedContent.map((text, i) => {
+          // Determine if this specific page has a subheading
+          const isFirstPage = i === 0;
+          const hasSubheading = isFirstPage && ['orgInfo', 'methodologies', 'benefits', 'intro_main', 'intro_modules'].includes(editingSectionId);
+
+          const stats = calculateLineStats(text, hasSubheading);
+
+          return (
+            <div key={i} className="page-editor-group" style={{ border: stats.isOver ? '2px solid red' : '1px solid #ddd' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px' }}>
+                <h4>Page {i + 1} {hasSubheading && <span style={{ fontSize: '0.8rem', color: '#666' }}>(Has Sub-heading)</span>}</h4>
+
+                {/* LINE COUNTER DISPLAY */}
+                <span style={{
+                  fontWeight: 'bold',
+                  color: stats.isOver ? 'red' : 'green',
+                  fontSize: '0.9rem'
+                }}>
+                  {stats.isOver
+                    ? `OVER LIMIT! Remove ${Math.abs(stats.remaining)} lines`
+                    : `${stats.remaining} lines remaining`
+                  }
+                  ({stats.lines}/{stats.max})
+                </span>
+              </div>
+
+              <textarea
+                className="form-textarea"
+                value={text}
+                style={{ height: '400px' }}
+                onChange={e => {
+                  const newP = [...paginatedContent];
+                  newP[i] = e.target.value;
+                  setPaginatedContent(newP);
+                }}
+              />
+
+              <div style={{ marginTop: '5px', fontSize: '12px', color: '#555' }}>
+                {stats.isOver && <p style={{ color: 'red' }}>⚠ You have typed too much for this page. Please create a new page below and move the extra text there.</p>}
+              </div>
+
+              <button
+                className="delete-btn"
+                style={{ marginTop: '10px', background: '#ff4444', color: 'white', border: 'none', padding: '5px 10px', cursor: 'pointer' }}
+                onClick={() => {
+                  const newP = [...paginatedContent]; newP.splice(i, 1); setPaginatedContent(newP);
+                }}
+                disabled={paginatedContent.length === 1}
+              >
+                Remove Page
+              </button>
+            </div>
+          );
+        })}
+
+        <div style={{ marginTop: '20px', borderTop: '2px dashed #ccc', paddingTop: '10px' }}>
+          <p style={{ fontSize: '14px', marginBottom: '10px' }}>Need more space? Add another page. The Index/Table of Contents will update automatically.</p>
+          <button className="form-button add-page-btn" onClick={() => setPaginatedContent([...paginatedContent, ''])}>+ Add New Page</button>
+        </div>
       </div>
     );
   };
@@ -927,6 +1007,31 @@ const StudentDashboard = ({ user, onLogout }) => {
       )}
     </div>
   );
+};
+// --- HELPER: Calculate Line Usage ---
+const calculateLineStats = (text, hasSubheading) => {
+  if (!text) return { lines: 0, chars: 0 };
+
+  // Approx limits for A4 (Times New Roman, 12-14pt)
+  const CHARS_PER_LINE = 85;
+  // If it has a subheading, we have less space (e.g., 30 lines), else ~35 lines
+  const MAX_LINES = hasSubheading ? 30 : 36;
+
+  const rawLines = text.split('\n');
+  let totalVisualLines = 0;
+
+  rawLines.forEach(line => {
+    // If a line is longer than 85 chars, it wraps in the PDF, counting as multiple lines
+    const wrapped = Math.ceil((line.length || 1) / CHARS_PER_LINE);
+    totalVisualLines += wrapped;
+  });
+
+  return {
+    lines: totalVisualLines,
+    max: MAX_LINES,
+    isOver: totalVisualLines > MAX_LINES,
+    remaining: MAX_LINES - totalVisualLines
+  };
 };
 
 export default StudentDashboard;
