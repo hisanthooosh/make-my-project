@@ -336,18 +336,46 @@ function HodDashboard({ user, onLogout }) {
                 </div>
               );
             }
+            // --- REPLACEMENT: CERTIFICATE (TEXT) ---
             else if (page.sectionId === 'certificate') {
               const data = titlePageData;
               pageContent = (
                 <div style={styles.borderFrame}>
-                  <div style={{ textAlign: 'center', marginTop: '40px' }}><div style={{ fontSize: '16pt', fontWeight: 'bold', color: '#800000' }}>DEPARTMENT OF COMPUTER APPLICATIONS</div><div style={{ fontSize: '20pt', fontWeight: 'bold', color: '#800000' }}>MOHAN BABU UNIVERSITY</div></div>
-                  <div style={{ textAlign: 'center', marginTop: '60px' }}><h2 style={{ fontSize: '24pt', fontWeight: 'bold', textDecoration: 'underline' }}>CERTIFICATE</h2></div>
+                  <div style={{ textAlign: 'center', marginTop: '40px' }}>
+                    <div style={{ fontSize: '16pt', fontWeight: 'bold', color: '#800000', marginBottom: '5px' }}>DEPARTMENT OF COMPUTER APPLICATIONS</div>
+                    <div style={{ fontSize: '20pt', fontWeight: 'bold', color: '#800000', marginBottom: '5px' }}>MOHAN BABU UNIVERSITY</div>
+                    <div style={{ fontSize: '14pt', fontWeight: 'bold', color: '#000000' }}>TIRUPATI</div>
+                  </div>
+                  <div style={{ textAlign: 'center', marginTop: '60px' }}>
+                    <h2 style={{ fontSize: '24pt', fontWeight: 'bold', textDecoration: 'underline', color: '#000000' }}>CERTIFICATE</h2>
+                  </div>
                   <div style={{ padding: '0 40px', marginTop: '40px', textAlign: 'justify', lineHeight: '2.0', fontSize: '14pt' }}>
-                    <p>This is to certify that the Internship report submitted by <b>{data.studentName}</b> (<b>{data.rollNo}</b>) is work done by him/her and submitted during <b>{data.academicYear}</b>...</p>
+                    <p style={{ margin: 0 }}>
+                      This is to certify that the Internship report submitted by
+                      <span style={{ fontWeight: 'bold', color: '#000080' }}> {data.studentName || '[Student Name]'} </span>
+                      (<span style={{ fontWeight: 'bold' }}>{data.rollNo || '[Roll No]'}</span>)
+                      is work done by him/her and submitted during
+                      <span style={{ fontWeight: 'bold' }}> {data.academicYear || '2024 - 2025'} </span>
+                      academic year, in partial fulfillment of the requirements for the award of the degree of
+                      <span style={{ fontWeight: 'bold' }}> MASTER OF COMPUTER APPLICATIONS </span>
+                      at
+                      <span style={{ fontWeight: 'bold' }}> {data.companyName || 'IBM'} </span>
+                      (Duration: <span style={{ fontWeight: 'bold' }}>{data.duration || 'July to Aug'}</span>).
+                    </p>
                   </div>
                   <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', padding: '0 40px', marginTop: '150px', marginBottom: '60px', fontSize: '12pt', fontWeight: 'bold' }}>
-                    <div style={{ textAlign: 'left' }}><div>Dept Coordinator</div><div style={{ marginTop: '60px' }}>Ms. Peddinti Neeraja</div></div>
-                    <div style={{ textAlign: 'right' }}><div>Head of Dept</div><div style={{ marginTop: '60px' }}>Dr. M. Sowmya Vani</div></div>
+                    <div style={{ textAlign: 'left' }}>
+                      <div>Department Internship Coordinator</div>
+                      <div style={{ marginTop: '60px' }}>Ms. Peddinti Neeraja,</div>
+                      <div style={{ fontWeight: 'normal' }}>Assistant Professor,</div>
+                      <div style={{ fontWeight: 'normal' }}>Department of CA</div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div>Head of the Department</div>
+                      <div style={{ marginTop: '60px' }}>Dr. M. Sowmya Vani,</div>
+                      <div style={{ fontWeight: 'normal' }}>Professor and Head,</div>
+                      <div style={{ fontWeight: 'normal' }}>Department of CA</div>
+                    </div>
                   </div>
                 </div>
               );
@@ -356,18 +384,211 @@ function HodDashboard({ user, onLogout }) {
               const imgUrl = Array.isArray(content) ? content[page.pageIndex] : content;
               pageContent = (<div style={{ ...styles.borderFrame, justifyContent: 'center', padding: '20px' }}>{imgUrl ? <img src={imgUrl} alt="Cert" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} /> : <div style={{ textAlign: 'center' }}><h3>CERTIFICATE SCAN</h3><p>No image.</p></div>}</div>);
             }
-            else if (page.sectionId === 'toc') {
-              pageContent = (<div style={{ ...styles.borderFrame, justifyContent: 'flex-start' }}><h2 style={{ textAlign: 'center', fontSize: '20pt', fontWeight: 'bold', textDecoration: 'underline', marginBottom: '30px' }}>INDEX</h2><p style={{ textAlign: 'center' }}>Table of Contents (Auto-Generated)</p></div>);
-            }
-            else if (page.sectionId === 'weeklyOverview') {
-              const allRows = Array.isArray(content) ? content : getDefaultContent('weeklyOverview');
-              const pageRows = allRows.slice(page.pageIndex * 12, (page.pageIndex * 12) + 12);
+            // --- REPLACEMENT: ACKNOWLEDGEMENT PAGE ---
+            else if (page.sectionId === 'acknowledgement') {
+              const data = titlePageData;
               pageContent = (
-                <div style={{ ...styles.borderFrame, justifyContent: 'flex-start', paddingTop: '40px' }}>
-                  <h3 style={{ fontSize: '18pt', fontWeight: 'bold', textDecoration: 'underline', marginBottom: '20px' }}>WEEKLY OVERVIEW</h3>
-                  <table style={styles.table}><thead><tr><th style={styles.th}>Week</th><th style={styles.th}>Date</th><th style={styles.th}>Topic</th></tr></thead><tbody>
-                    {pageRows.map((r, i) => (<tr key={i}><td style={styles.td}>{r.week}</td><td style={styles.td}>{r.date}</td><td style={styles.td}>{r.topic}</td></tr>))}
-                  </tbody></table>
+                <div style={{ ...styles.borderFrame, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'stretch', padding: '40px' }}>
+
+                  {/* Title */}
+                  <h2 style={{ textAlign: 'center', fontSize: '16pt', fontWeight: 'bold', textDecoration: 'underline', marginBottom: '30px', marginTop: '10px', textTransform: 'uppercase' }}>ACKNOWLEDGEMENT</h2>
+
+                  {/* Body Text */}
+                  <div style={{ fontSize: '11pt', lineHeight: '1.8', textAlign: 'justify', whiteSpace: 'pre-wrap' }}>
+                    <p style={{ marginBottom: '15px' }}>This acknowledgement transcends the reality of formality when I would like to express my deep gratitude and respect to all those people behind the screen who guided, inspired and helped me for the completion of my internship.</p>
+
+                    <p style={{ marginBottom: '10px' }}>I express my deep sense of gratitude to our beloved chancellor <strong>Dr. M. Mohan Babu</strong>, Padma Shri awardee for his encouragement throughout the program.</p>
+
+                    <p style={{ marginBottom: '10px' }}>I express my deep sense of gratitude to our beloved vice-chancellor <strong>Dr. Nagaraj Ramrao</strong>, for his encouragement throughout the program.</p>
+
+                    <p style={{ marginBottom: '10px' }}>I owe my gratitude and special thanks to the Dean <strong>Dr. Babu DevasenaPati</strong>, for his special encouragement and advice to shape myself for the future career.</p>
+
+                    <p style={{ marginBottom: '10px' }}>I am extremely thankful to <strong>Dr. M. Sowmya Vani</strong>, HOD, and Department of Computer Applications for all provisions made and for her constant encouragement throughout my work.</p>
+
+                    <p style={{ marginBottom: '10px' }}>I would like to thank <strong>{data.companyName || 'the company'}</strong> for giving me the opportunity to do an internship within the organization.</p>
+
+                    <p style={{ marginBottom: '10px' }}>I wish to express my deep sense of gratitude to my Internship Coordinator <strong>Ms. Peddinti Neeraja</strong>, Associate Professor, Department of Computer Applications for extending her valuable co-operation, moral support, kind attention, guidance, suggestions, and encouragement to complete my Project Work successfully.</p>
+
+                    <p style={{ marginBottom: '10px' }}>I thank all my beloved Faculty, Department of CA for giving their valuable suggestions and maximum co-operation.</p>
+
+                    <p style={{ marginBottom: '10px' }}>I owe a deep sense of gratitude to my beloved Parents in extending their moral support in this Endeavour.</p>
+
+                    <p>I would like to thank all my friends who extended their help, encouragement and moral support either directly or indirectly in completing my internship.</p>
+                  </div>
+
+                  {/* Name & Roll No (Pushed to Bottom Right) */}
+                  <div style={{
+                    marginTop: 'auto',
+                    alignSelf: 'flex-end',
+                    textAlign: 'right',
+                    fontSize: '13pt',
+                    fontWeight: 'bold',
+                    marginBottom: '20px'
+                  }}>
+                    <div style={{ textTransform: 'uppercase' }}>{data.studentName}</div>
+                    <div>({data.rollNo})</div>
+                  </div>
+                </div>
+              );
+            }
+            // --- REPLACEMENT: BENEFITS PAGE ---
+            else if (page.sectionId === 'benefits') {
+              const text = Array.isArray(content) ? content[page.pageIndex] : (content || getDefaultContent(page.sectionId));
+
+              pageContent = (
+                <div style={{ ...styles.borderFrame, justifyContent: 'flex-start', alignItems: 'stretch', padding: '40px' }}>
+                  {page.pageIndex === 0 && (
+                    <h3 style={{
+                      textAlign: 'left',
+                      fontSize: '14pt',
+                      fontWeight: 'bold',
+                      marginBottom: '20px',
+                      marginTop: '0px',
+                      width: '100%'
+                    }}>
+                      Benefits of the Company/Institution through our report
+                    </h3>
+                  )}
+
+                  <div style={{ fontSize: '13pt', lineHeight: '1.8', textAlign: 'justify', whiteSpace: 'pre-wrap' }}>
+                    {text}
+                  </div>
+                </div>
+              );
+            }
+            // --- REPLACEMENT: INDEX (Dynamic Table of Contents) ---
+            else if (page.sectionId === 'toc') {
+              // 1. Define which sections strictly belong in the TOC (starting from Acknowledgement)
+              const tocRows = [];
+              let startCollecting = false;
+
+              // Helper to find the page number in your 'allPages' list
+              const findPageNumber = (id) => {
+                const foundIdx = allPages.findIndex(p => p.sectionId === id);
+                // Logic: Page count starts after the first 3 pages (Title, Cert, Scan) -> idx 3 = Page 1
+                if (foundIdx > 2) return foundIdx - 2;
+                return ''; // Don't show number if it's one of the first 3 unnumbered pages
+              };
+
+              // 2. Loop through the structure to build the table rows
+              reportStructure.forEach(sect => {
+                // Start collecting only from 'acknowledgement'
+                if (sect.id === 'acknowledgement') startCollecting = true;
+
+                if (startCollecting) {
+                  // If it has subsections (like Introduction 1.1, 1.2), list them
+                  if (sect.subsections && sect.subsections.length > 0) {
+                    // List the Main Header (e.g., "1. Introduction") pointing to first subsection
+                    const firstSubPage = findPageNumber(sect.subsections[0].id);
+                    if (firstSubPage) {
+                      tocRows.push({ title: sect.title, page: firstSubPage, isMain: true });
+                    }
+                  }
+                  else {
+                    // Regular sections (Abstract, Benefits, etc.)
+                    const pNum = findPageNumber(sect.id);
+                    // Don't list the TOC itself in the TOC
+                    if (sect.id !== 'toc' && pNum) {
+                      tocRows.push({ title: sect.title, page: pNum, isMain: true });
+                    }
+                  }
+                }
+              });
+
+              pageContent = (
+                <div style={{ ...styles.borderFrame, justifyContent: 'flex-start' }}>
+                  <h2 style={{
+                    textAlign: 'center',
+                    fontSize: '20pt',
+                    fontWeight: 'bold',
+                    textDecoration: 'underline',
+                    marginBottom: '30px',
+                    textTransform: 'uppercase'
+                  }}>
+                    INDEX
+                  </h2>
+
+                  <div style={{ width: '100%', padding: '0 20px' }}>
+                    {/* Table Header */}
+                    <div style={{ display: 'flex', borderBottom: '2px solid black', paddingBottom: '5px', marginBottom: '10px', fontWeight: 'bold' }}>
+                      <div style={{ flex: 1, textAlign: 'left', fontSize: '14pt' }}>Topic</div>
+                      <div style={{ width: '80px', textAlign: 'right', fontSize: '14pt' }}>Page No</div>
+                    </div>
+
+                    {/* Table Rows */}
+                    {tocRows.map((row, rIdx) => (
+                      <div key={rIdx} style={{
+                        display: 'flex',
+                        alignItems: 'baseline',
+                        marginBottom: '12px',
+                        fontSize: '13pt'
+                      }}>
+                        {/* Topic Name with dots spacer */}
+                        <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+                          <span style={{ fontWeight: row.isMain ? 'bold' : 'normal', background: '#fff', paddingRight: '5px', zIndex: 1 }}>
+                            {row.title}
+                          </span>
+                          {/* Dotted Leader Line */}
+                          <span style={{ flex: 1, borderBottom: '1px dotted #000', marginBottom: '5px', marginLeft: '5px' }}></span>
+                        </div>
+
+                        {/* Page Number */}
+                        <div style={{ width: '60px', textAlign: 'right', paddingLeft: '10px', background: '#fff', zIndex: 1 }}>
+                          {row.page}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            }
+            // --- REPLACEMENT: WEEKLY OVERVIEW ---
+            else if (page.sectionId === 'weeklyOverview') {
+              const ROWS_PER_PAGE = 12;
+              const allRows = Array.isArray(content) ? content : getDefaultContent('weeklyOverview');
+
+              // SLICE DATA: Only show rows for this specific page
+              const start = page.pageIndex * ROWS_PER_PAGE;
+              const end = start + ROWS_PER_PAGE;
+              const pageRows = allRows.slice(start, end);
+
+              pageContent = (
+                <div style={{
+                  ...styles.borderFrame,
+                  justifyContent: 'flex-start',
+                  paddingTop: '40px'
+                }}>
+                  <h3 style={{
+                    fontSize: '18pt',
+                    fontWeight: 'bold',
+                    textDecoration: 'underline',
+                    marginBottom: '20px',
+                    textTransform: 'uppercase'
+                  }}>
+                    {page.pageIndex === 0 ? 'WEEKLY OVERVIEW' : 'WEEKLY OVERVIEW (Cont.)'}
+                  </h3>
+
+                  <table style={{ ...styles.table, marginTop: '10px', fontSize: '11pt' }}>
+                    <thead>
+                      <tr>
+                        <th style={{ ...styles.th, width: '15%' }}>Week</th>
+                        <th style={{ ...styles.th, width: '20%' }}>Date / Day</th>
+                        <th style={styles.th}>Topic / Activity</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pageRows.map((r, i) => (
+                        <tr key={i}>
+                          <td style={{ ...styles.td, textAlign: 'center', fontWeight: 'bold' }}>{r.week}</td>
+                          <td style={styles.td}>
+                            <div style={{ fontWeight: 'bold' }}>{r.date}</div>
+                            <div style={{ fontSize: '10pt', fontStyle: 'italic' }}>{r.day}</div>
+                          </td>
+                          <td style={styles.td}>{r.topic}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               );
             }
