@@ -3,89 +3,43 @@ import api from '../api';
 import './HodDashboard.css'; // This is the new CSS file
 import mbuLogo from '../assets/MBU_Logo.png';
 
-// This structure must be identical to the one in StudentDashboard.js
-// to ensure the preview renders correctly.
+// --- 1. REPLACEMENT: NEW REPORT STRUCTURE ---
 const reportStructure = [
-  { id: 'certificate', title: 'Certificate', isPage: true, subsections: [] },
-  { id: 'declaration', title: 'Declaration', isPage: true, subsections: [] },
+  { id: 'titlePage', title: 'Title Page', isPage: true, subsections: [], inputType: 'form' },
+  { id: 'certificate', title: 'Certificate (Text)', isPage: true, subsections: [], inputType: 'generated' },
+  { id: 'certificateScan', title: 'Certificate (Scan)', isPage: true, subsections: [], inputType: 'image' },
+  { id: 'acknowledgement', title: 'Acknowledgement', isPage: true, subsections: [] },
   { id: 'abstract', title: 'Abstract', isPage: true, subsections: [] },
-  { id: 'toc', title: 'Table of Contents', isPage: true, subsections: [] },
+  { id: 'orgInfo', title: 'Organization Information', isPage: true, subsections: [] },
+  { id: 'methodologies', title: 'Methodologies', isPage: true, subsections: [] },
+  { id: 'benefits', title: 'Benefits', isPage: true, subsections: [] },
+  { id: 'toc', title: 'INDEX', isPage: true, subsections: [] },
+  { id: 'weeklyOverview', title: 'Weekly Overview', isPage: true, subsections: [], inputType: 'weeklyTable' },
   {
     id: 'introduction',
     title: '1. Introduction',
     isPage: false,
     subsections: [
       { id: 'intro_main', title: '1.1 Introduction', isPage: true },
-      { id: 'intro_aim', title: '1.2 Aim of the Project', isPage: true },
-      { id: 'intro_domain', title: '1.3 Project Domain', isPage: true },
-      { id: 'intro_scope', title: '1.4 Scope of the Project', isPage: true }
+      { id: 'intro_modules', title: '1.2 Module Description', isPage: true },
     ]
   },
-  {
-    id: 'literatureReview',
-    title: '2. Literature Review',
-    isPage: true,
-    subsections: []
-  },
-  {
-    id: 'problemDefinition',
-    title: '3. Problem Definition',
-    isPage: false,
-    subsections: [
-      { id: 'problem_existing', title: '3.1 Existing System', isPage: true },
-      { id: 'problem_hardware', title: '3.2 Hardware Requirements', isPage: true },
-      { id: 'problem_software', title: '3.3 Software Requirements', isPage: true }
-    ]
-  },
-  {
-    id: 'proposedSystem',
-    title: '4. Proposed System',
-    isPage: false,
-    subsections: [
-      { id: 'proposed_objectives', title: '4.1 Objectives', isPage: true },
-      { id: 'proposed_formulation', title: '4.2 Problem Formulation', isPage: true },
-      { id: 'proposed_methodology', title: '4.3 Methodology', isPage: true }
-    ]
-  },
-  { id: 'datasetCollection', title: '5. Dataset Collection', isPage: true, subsections: [] },
-  {
-    id: 'systemDesign',
-    title: '6. System Design (UML)',
-    isPage: false,
-    subsections: [
-      { id: 'design_high_level', title: '6.1 High level Design', isPage: true, inputType: 'image' },
-      { id: "design_flow_chart", title: "6.2 System Flow Chart", isPage: true, inputType: 'image' },
-      { id: "design_use_case", title: "6.3 Use case Diagram", isPage: true, inputType: 'image' },
-      { id: "design_class", title: "6.4 Class Diagram", isPage: true, inputType: 'image' },
-      { id: "design_sequence", title: "6.5 Sequence Diagram", isPage: true, inputType: 'image' },
-      { id: "design_deployment", title: "6.6 Deployment Diagram", isPage: true, inputType: 'image' },
-      { id: "design_activity", title: "6.7 Activity Diagram", isPage: true, inputType: 'image' },
-    ]
-  },
-  {
-    id: 'implementation',
-    title: '7. Implementation',
-    isPage: false,
-    subsections: [
-      { id: 'impl_platform', title: '7.1 Platform/Technologies', isPage: true },
-      { id: 'impl_testing', title: '7.2 System Testing', isPage: true },
-      { id: 'impl_results', title: '7.3 Results', isPage: true }
-    ]
-  },
-  {
-    id: 'conclusion',
-    title: '8. Conclusion',
-    isPage: false,
-    subsections: [
-      { id: 'concl_limitations', title: '8.1 Limitations', isPage: true },
-      { id: 'concl_future_work', title: '8.2 Future Work', isPage: true }
-    ]
-  },
-  { id: 'references', title: '9. References', isPage: true, subsections: [] },
-  { id: 'bioData', title: 'Student Bio-data (Resume)', isPage: true, subsections: [] }
+  { id: 'systemAnalysis', title: '2. System Analysis', isPage: true, subsections: [] },
+  { id: 'srs', title: '3. Software Requirements', isPage: true, subsections: [] },
+  { id: 'technology', title: '4. Technology', isPage: true, subsections: [] },
+  { id: 'coding', title: '5. Coding', isPage: true, subsections: [] },
+  { id: 'screenshots', title: '6. Screenshots', isPage: true, subsections: [], inputType: 'image' },
+  { id: 'conclusion', title: '7. Conclusion', isPage: true, subsections: [] },
+  { id: 'bibliography', title: '8. Bibliography', isPage: true, subsections: [] },
 ];
+
 const allSections = reportStructure.flatMap(s => s.subsections.length > 0 ? s.subsections : s);
-const getDefaultContent = (sectionId) => "[Content not submitted yet]";
+
+// --- Helper: Default Content to prevent crashes ---
+const getDefaultContent = (sectionId) => {
+  if (sectionId === 'weeklyOverview') return [{ week: '1st Week', date: '', day: '', topic: 'Introduction' }];
+  return '';
+};
 
 // --- HOD Dashboard Component ---
 function HodDashboard({ user, onLogout }) {
@@ -240,6 +194,21 @@ function HodDashboard({ user, onLogout }) {
     }
     setLoadingProject(false);
   };
+  // --- Handle Delete Student ---
+  const handleDeleteStudent = async (studentId, studentName) => {
+    if (window.confirm(`Are you sure you want to PERMANENTLY DELETE student "${studentName}"? This cannot be undone.`)) {
+      try {
+        await api.delete(`/hod/delete-student/${studentId}`);
+
+        // Remove the student from the local list so the table updates instantly
+        setStudentList(prev => prev.filter(s => s.uid !== studentId));
+        alert('Student deleted successfully.');
+      } catch (err) {
+        console.error(err);
+        alert('Failed to delete student. ' + (err.response?.data?.message || ''));
+      }
+    }
+  };
 
   const closeProjectPreview = () => {
     setIsPreviewOpen(false);
@@ -248,92 +217,60 @@ function HodDashboard({ user, onLogout }) {
     setError('');
   };
 
-  // --- REPLACE your old 'allPages' useMemo (around line 273) with THIS ---
-
+  // --- 2. REPLACEMENT: PAGE CALCULATION LOGIC ---
   const allPages = useMemo(() => {
     const pages = [];
-    // We must wait for the project and student to load
     if (!selectedProject || !selectedStudent) return [];
-    // Use selectedProject as the 'project'
+
+    // Use selectedProject as the source
     const project = selectedProject;
 
     reportStructure.forEach(section => {
-
-      // 1. Handle Table of Contents
+      // 1. TOC
       if (section.id === 'toc') {
-        pages.push({
-          id: 'toc_0',
-          title: section.title,
-          pageIndex: 0,
-          sectionId: section.id, // 'toc'
-          parentTitle: null
-        });
-        pages.push({
-          id: 'toc_1',
-          title: section.title,
-          pageIndex: 1,
-          sectionId: 'toc-2', // 'toc-2'
-          parentTitle: null
-        });
-        return; // Done with this section
+        pages.push({ id: 'toc_0', title: section.title, pageIndex: 0, sectionId: section.id });
+        return;
       }
 
-      // 2. Handle sections that are single pages (no subsections)
-      if (section.isPage && section.subsections.length === 0) {
-        const content = project.sections?.[section.id]?.content;
-        let contentPages = [];
+      // 2. Sections with Subsections (Introduction, etc.)
+      if (!section.isPage && section.subsections.length > 0) {
+        section.subsections.forEach(sub => {
+          const content = project.sections?.[sub.id]?.content;
+          const contentPages = Array.isArray(content) ? (content.length ? content : ['']) : (content ? [content] : [getDefaultContent(sub.id)]);
+          contentPages.forEach((_, idx) => pages.push({ id: `${sub.id}_${idx}`, title: sub.title, pageIndex: idx, sectionId: sub.id, parentTitle: section.title }));
+        });
+        return;
+      }
 
-        if (section.id === 'bioData') {
-          contentPages = [content || getDefaultContent(section.id)]; // HOD getDefaultContent is simple
-        } else if (Array.isArray(content)) {
-          contentPages = content.length > 0 ? content : [''];
-        } else if (content) {
-          contentPages = [content];
-        } else {
-          contentPages = [getDefaultContent(section.id)];
+      // 3. Special Sections (Weekly, Images, Normal Pages)
+      const content = project.sections?.[section.id]?.content;
+
+      if (section.id === 'weeklyOverview') {
+        const ROWS_PER_PAGE = 12;
+        const data = Array.isArray(content) ? content : getDefaultContent('weeklyOverview');
+        const pageCount = Math.ceil((data.length || 1) / ROWS_PER_PAGE);
+        for (let i = 0; i < pageCount; i++) {
+          pages.push({ id: `weeklyOverview_${i}`, title: section.title, pageIndex: i, sectionId: section.id });
         }
-
-        if (contentPages.length === 0) contentPages.push(getDefaultContent(section.id));
-
-        contentPages.forEach((_, index) => {
-          pages.push({
-            id: `${section.id}_${index}`,
-            title: section.title,
-            pageIndex: index,
-            sectionId: section.id,
-            parentTitle: null
-          });
-        });
       }
+      else if (section.inputType === 'image') {
+        let count = 1;
+        if (Array.isArray(content) && content.length > 0) count = content.length;
+        else if (content && typeof content === 'string') count = 1;
 
-      // 3. Handle sections that are containers for subsections
-      else if (!section.isPage && section.subsections.length > 0) {
-        section.subsections.forEach(subSection => {
-          const content = project.sections?.[subSection.id]?.content;
-
-          const contentPages = Array.isArray(content)
-            ? (content.length > 0 ? content : [''])
-            : (content ? [content] : [getDefaultContent(subSection.id)]);
-
-          if (contentPages.length === 0) contentPages.push(getDefaultContent(subSection.id));
-
-          contentPages.forEach((_, index) => {
-            pages.push({
-              id: `${subSection.id}_${index}`,
-              title: subSection.title,
-              pageIndex: index,
-              sectionId: subSection.id,
-              parentTitle: section.title
-            });
-          });
-        });
+        for (let i = 0; i < count; i++) {
+          pages.push({ id: `${section.id}_${i}`, title: section.title, pageIndex: i, sectionId: section.id });
+        }
       }
-
+      else {
+        let contentPages = Array.isArray(content) ? (content.length ? content : ['']) : (content ? [content] : [getDefaultContent(section.id)]);
+        contentPages.forEach((_, idx) => pages.push({ id: `${section.id}_${idx}`, title: section.title, pageIndex: idx, sectionId: section.id }));
+      }
     });
     return pages;
-  }, [selectedProject, selectedStudent]); // Depends on these two states
-  const totalPages = allPages.length;
+  }, [selectedProject, selectedStudent]);
 
+  const totalPages = allPages.length;
   const handlePreviewNav = (direction) => {
     let newIndex = currentPageIndex;
     if (direction === 'next' && currentPageIndex < totalPages - 1) newIndex++;
@@ -346,466 +283,115 @@ function HodDashboard({ user, onLogout }) {
     return selectedProject?.sections?.[sectionId]?.status || 'pending'; // Default to pending
   };
 
-  //
-  // --- REPLACE your old renderPreview function with THIS ---
-  //
-  //
-  // --- REPLACE your old renderPreview function(s) with THIS ---
-  //
+  // --- 3. REPLACEMENT: RENDER PREVIEW (A4 STYLE) ---
   const renderPreview = () => {
-    // --- FIX: Check for selectedStudent and selectedProject ---
-    if (loadingProject) return <div style={{ padding: '20px', textAlign: 'center', color: '#888' }}>Loading Project...</div>;
-    if (!selectedProject) return <div style={{ padding: '20px', textAlign: 'center', color: '#888' }}>This student has not started their project.</div>;
-    if (!selectedStudent || allPages.length === 0) {
-      return (
-        <div style={{ padding: '20px', textAlign: 'center', color: '#888' }}>
-          <p>Loading project preview...</p>
-        </div>
-      );
-    }
+    if (loadingProject) return <div style={{ padding: '20px', textAlign: 'center' }}>Loading Project...</div>;
+    if (!selectedProject) return <div style={{ padding: '20px', textAlign: 'center' }}>No project data found.</div>;
+    if (!selectedStudent) return null;
 
-    // --- Reusable Inline Styles (Copied from Student) ---
+    const project = selectedProject;
+
+    // Standard Styles from Student/Faculty Dashboard
     const styles = {
-      a4Page: {
-        width: '794px',
-        minHeight: '1123px',
-        padding: '50px',
-        boxSizing: 'border-box',
-        backgroundColor: '#ffffff',
-        fontFamily: "'Times New Roman', Times, serif",
-        fontSize: '12pt',
-        lineHeight: 1.5,
-        color: '#000',
-        position: 'relative',
-        overflow: 'hidden',
-      },
-      contentBorder: {
-        minHeight: '1000px',
-        border: '3px double #000',
-        padding: '40px',
-        position: 'relative',
-      },
-      pageHeaderContainer: {
-        position: 'absolute',
-        top: '25px',
-        left: '50px',
-        right: '50px',
-        display: 'flex',
-        justifyContent: 'space-between',
-        fontSize: '10pt',
-        color: '#000',
-        fontFamily: 'Arial, sans-serif',
-      },
-      pageFooter: {
-        position: 'absolute',
-        bottom: '25px',
-        left: '50px',
-        right: '50px',
-        display: 'flex',
-        justifyContent: 'space-between',
-        fontSize: '10pt',
-        color: '#333',
-        fontFamily: 'Arial, sans-serif',
-      },
-      mainHeading: {
-        fontSize: '16pt',
-        fontWeight: 'bold',
-        textTransform: 'uppercase',
-        textAlign: 'center',
-        marginBottom: '24px',
-        paddingTop: '10px',
-      },
-      subHeading: {
-        fontSize: '14pt',
-        fontWeight: 'bold',
-        marginBottom: '16px',
-      },
-      bodyText: {
-        textAlign: 'justify',
-        lineHeight: 1.6,
-        whiteSpace: 'pre-wrap',
-        fontSize: '12pt',
-      },
-      tocList: {
-        listStyleType: 'none',
-        paddingLeft: 0,
-      },
-      tocItem: {
-        display: 'flex',
-        justifyContent: 'space-between',
-        marginBottom: '10px',
-        fontSize: '12pt',
-      },
-      tocSubList: {
-        listStyleType: 'none',
-        paddingLeft: '30px',
-      },
-      tocSubItem: {
-        display: 'flex',
-        justifyContent: 'space-between',
-        marginBottom: '8px',
-        fontSize: '11pt',
-      },
-      resumePage: {
-        padding: '0',
-        fontFamily: 'Arial, sans-serif',
-        fontSize: '11pt',
-      },
-      resumeHeader: {
-        textAlign: 'center',
-        marginBottom: '20px',
-      },
-      resumeContact: {
-        display: 'flex',
-        justifyContent: 'center',
-        gap: '15px',
-        fontSize: '10pt',
-        color: '#333',
-      },
-      resumeSection: {
-        marginBottom: '15px',
-      },
-      resumeSectionH3: {
-        fontSize: '13pt',
-        fontWeight: 'bold',
-        borderBottom: '2px solid #000',
-        paddingBottom: '5px',
-        marginBottom: '8px',
-        color: '#000',
-      },
+      a4: { width: '794px', minHeight: '1123px', background: 'white', color: 'black', fontFamily: "'Times New Roman', serif", position: 'relative', boxSizing: 'border-box', margin: '0 auto 20px auto', padding: '40px' },
+      borderFrame: { border: '4px double #000', width: '100%', height: '1020px', padding: '20px 10px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between', textAlign: 'center' },
+      mainTitle: { fontSize: '24pt', fontWeight: 'bold', textDecoration: 'underline', marginBottom: '15px' },
+      subText: { fontSize: '14pt', fontStyle: 'italic', margin: '5px 0' },
+      degreeText: { fontSize: '18pt', fontWeight: 'bold', marginTop: '10px' },
+      nameText: { fontSize: '20pt', fontWeight: 'bold', color: '#000080', marginTop: '5px', textTransform: 'uppercase' },
+      rollNoText: { fontSize: '16pt', fontWeight: 'bold', marginTop: '5px' },
+      companySection: { fontSize: '16pt', fontWeight: 'bold', margin: '10px 0' },
+      collegeSection: { marginTop: '10px', display: 'flex', flexDirection: 'column', alignItems: 'center' },
+      deptName: { fontSize: '16pt', fontWeight: 'bold', color: '#800000', marginTop: '10px' },
+      collegeName: { fontSize: '22pt', fontWeight: 'bold', color: '#800000', margin: '5px 0' },
+      addressText: { fontSize: '12pt', fontWeight: 'bold' },
+      yearText: { fontSize: '14pt', fontWeight: 'bold', marginTop: '5px' },
+      table: { width: '100%', borderCollapse: 'collapse', marginTop: '20px', fontSize: '12pt' },
+      th: { border: '1px solid black', padding: '8px', background: '#f2f2f2', fontWeight: 'bold' },
+      td: { border: '1px solid black', padding: '8px', textAlign: 'left' }
     };
 
-    // --- Helper to get page number for TOC ---
-    const getPageNumForSection = (sectionId) => {
-      let pageIndex = allPages.findIndex(p => p.sectionId === sectionId);
-      if (pageIndex !== -1) return pageIndex + 1;
-      const parentSection = reportStructure.find(s => s.id === sectionId);
-      if (parentSection && parentSection.subsections.length > 0) {
-        const firstChildId = parentSection.subsections[0].id;
-        pageIndex = allPages.findIndex(p => p.sectionId === firstChildId);
-        if (pageIndex !== -1) return pageIndex + 1;
-      }
-      return '?';
+    const titlePageData = project.sections?.titlePage?.content || {
+      studentName: selectedStudent.name, rollNo: selectedStudent.rollNumber,
+      title: 'INTERNSHIP REPORT', subTitle: 'A report submitted...', degree: 'MCA',
+      companyName: 'IBM', duration: 'July to Aug', academicYear: '2024 - 2025'
     };
 
-    // --- Get Certificate Data (for headers) ---
-    // --- FIX: Use selectedProject ---
-    const certData = selectedProject.sections?.certificate?.content || {};
-    const shortTitle = certData.shortTitle || certData.projectName || 'Project Title';
-    // --- FIX: Use selectedStudent ---
-    const studentRollNo = selectedStudent.rollNumber || selectedStudent.email?.split('@')[0] || '[RollNo]';
-
-    // --- Split reportStructure for TOC pages ---
-    const tocItems = reportStructure.filter(s => s.id !== 'toc' && s.id !== 'images');
-    const splitIndex = 7;
-    const tocPage1Items = tocItems.slice(0, splitIndex);
-    const tocPage2Items = tocItems.slice(splitIndex);
-
-    // --- Main Render Logic ---
     return (
       <div className="preview-content-wrapper" ref={pdfPreviewRef}>
-        <div className="preview-content-filmstrip" style={{
-          transform: `translateX(-${currentPageIndex * 100}%)`
-        }}>
+        <div className="preview-content-filmstrip" style={{ transform: `translateX(-${currentPageIndex * 100}%)` }}>
+          {allPages.map((page, idx) => {
+            const section = allSections.find(s => s.id === page.sectionId);
+            const content = project.sections?.[page.sectionId]?.content;
+            let pageContent = null;
 
-          {allPages.map((page, index) => {
-            const { title, pageIndex: subPageIndex, sectionId, parentTitle } = page;
-            const currentPageNum = index + 1;
-            const sectionDef = allSections.find(s => s.id === sectionId);
-
-            // ---
-            // --- 1. CERTIFICATE PAGE (Unchanged) ---
-            // ---
-            if (sectionId === 'certificate') {
-              return (
-                <div className="flipper-page-slot" key="slot-certificate">
-                  <div id="page-certificate" style={{
-                    width: "794px",
-                    minHeight: "1123px",
-                    padding: "50px 60px",
-                    fontFamily: "'Times New Roman', serif",
-                    color: "#000",
-                    backgroundColor: "#fff",
-                    boxSizing: "border-box",
-                    textAlign: "center",
-                    position: "relative",
-                    border: "1px solid #888",
-                    fontSize: '12pt',
-                  }}>
-
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "15px", marginBottom: "10px" }}>
-                      {/* --- FIX: Use mbuLogo (as imported in HODDashboard) --- */}
-                      <img src={mbuLogo} alt="MBU Logo" style={{ width: "110px", height: "auto", marginRight: "15px" }} />
-                      <div style={{ textAlign: "center" }}>
-                        <h1 style={{ color: "#D10000", fontSize: "30px", fontWeight: "bold", margin: "0", lineHeight: "1.2", letterSpacing: "0.5px" }}>
-                          MOHAN BABU UNIVERSITY
-                        </h1>
-                        <p style={{ fontSize: "14px", margin: "5px 0 0 0" }}>
-                          Sree Sainath Nagar, Tirupati 517 102
-                        </p>
-                      </div>
-                    </div>
-                    <h3 style={{ fontSize: "18px", margin: "15px 0 5px 0" }}>
-                      SCHOOL OF COMPUTING
-                    </h3>
-                    <h3 style={{ fontSize: "16px", margin: "5px 0 25px 0" }}>
-                      DEPARTMENT OF COMPUTER APPLICATIONS
-                    </h3>
-                    <h2 style={{ fontSize: "28px", textDecoration: "underline", color: "#000066", marginBottom: "30px", fontFamily: "'Old English Text MT', 'Times New Roman', serif" }}>
-                      Certificate
-                    </h2>
-                    <div style={{ textAlign: "justify", fontSize: "16px", lineHeight: "1.8", width: "90%", margin: "0 auto" }}>
-                      <p>
-                        This is to certify that the project report entitled{" "}
-                        <span style={{ color: "#C00000", fontWeight: "bold" }}>
-                          {certData.projectName || "[Project Title]"}
-                        </span>{" "}
-                        is the <span style={{ fontWeight: "bold" }}>bonafide</span> work
-                        carried out and submitted by
-                      </p>
-                      <p style={{ textAlign: "center", marginTop: "25px" }}>
-                        <span style={{ color: "#0000FF", fontWeight: "bold", fontSize: "18px", textTransform: "uppercase" }}>
-                          {/* --- FIX: Use selectedStudent --- */}
-                          {selectedStudent.name || "[Student Name]"}
-                        </span>
-                        <br />
-                        <span style={{ fontWeight: "bold" }}>
-                          {studentRollNo}
-                        </span>
-                      </p>
-                      <p style={{ marginTop: "20px" }}>
-                        in the Department of <strong>Computer Applications</strong>, <strong>School of Computing</strong> of <strong>Mohan Babu University, <u>Tirupati</u></strong> in partial fulfillment of the requirements for the award of the degree of <strong>{certData.degreeAwarded || "Master of Computer Applications"}</strong> during <strong>{certData.batch || "2025-26"}</strong>.
-                      </p>
-                    </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", marginTop: "60px", padding: "0 60px", textAlign: "left", fontSize: '12pt' }}>
-                      <div style={{ width: "45%" }}>
-                        <strong>Guide</strong>
-                        <br /><br />
-                        <p>
-                          {certData.guideName || "[Guide Name]"}<br />
-                          {certData.guideDesignation || "[Guide Designation]"}
-                        </p>
-                      </div>
-                      <div style={{ width: "45%", textAlign: "right" }}>
-                        <strong>Head of Dept.</strong>
-                        <br /><br />
-                        <p>
-                          {certData.hodName || "[HOD Name]"}<br />
-                          {certData.hodDesignation || "[HOD Designation]"}
-                        </p>
-                      </div>
-                    </div>
-                    <div style={{ textAlign: "left", marginTop: "50px", paddingLeft: "60px", fontWeight: "bold", fontSize: '12pt' }}>
-                      Date: {new Date(certData.submissionDate || Date.now()).toLocaleDateString("en-GB")}
-                    </div>
-                    <div className="report-page-footer" style={{
-                      position: 'absolute',
-                      bottom: '50px',
-                      left: '60px',
-                      right: '60px',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      fontSize: '10pt',
-                      fontFamily: 'Arial, sans-serif',
-                    }}>
-                      <span>MBU 2026</span>
-                      <span>{currentPageNum}</span>
-                    </div>
+            if (page.sectionId === 'titlePage') {
+              const data = content || titlePageData;
+              pageContent = (
+                <div style={styles.borderFrame}>
+                  <div><div style={styles.mainTitle}>{data.title}</div><div style={styles.subText}>{data.subTitle}</div><div style={styles.degreeText}>{data.degree}</div></div>
+                  <div><div style={{ fontSize: '14pt', margin: '10px 0' }}>by</div><div style={styles.nameText}>{data.studentName}</div><div style={styles.rollNoText}>{data.rollNo}</div></div>
+                  <div><div style={{ fontSize: '14pt', margin: '10px 0' }}>in</div><div style={styles.companySection}>{data.companyName}</div><div style={{ fontSize: '12pt' }}>(Duration: {data.duration})</div></div>
+                  <div style={styles.collegeSection}><img src={mbuLogo} alt="MBU" style={{ width: '130px', height: 'auto' }} /><div style={styles.deptName}>DEPARTMENT OF COMPUTER APPLICATIONS</div><div style={styles.collegeName}>MOHAN BABU UNIVERSITY</div><div style={styles.addressText}>Tirupati - 517102</div><div style={styles.yearText}>{data.academicYear}</div></div>
+                </div>
+              );
+            }
+            else if (page.sectionId === 'certificate') {
+              const data = titlePageData;
+              pageContent = (
+                <div style={styles.borderFrame}>
+                  <div style={{ textAlign: 'center', marginTop: '40px' }}><div style={{ fontSize: '16pt', fontWeight: 'bold', color: '#800000' }}>DEPARTMENT OF COMPUTER APPLICATIONS</div><div style={{ fontSize: '20pt', fontWeight: 'bold', color: '#800000' }}>MOHAN BABU UNIVERSITY</div></div>
+                  <div style={{ textAlign: 'center', marginTop: '60px' }}><h2 style={{ fontSize: '24pt', fontWeight: 'bold', textDecoration: 'underline' }}>CERTIFICATE</h2></div>
+                  <div style={{ padding: '0 40px', marginTop: '40px', textAlign: 'justify', lineHeight: '2.0', fontSize: '14pt' }}>
+                    <p>This is to certify that the Internship report submitted by <b>{data.studentName}</b> (<b>{data.rollNo}</b>) is work done by him/her and submitted during <b>{data.academicYear}</b>...</p>
+                  </div>
+                  <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', padding: '0 40px', marginTop: '150px', marginBottom: '60px', fontSize: '12pt', fontWeight: 'bold' }}>
+                    <div style={{ textAlign: 'left' }}><div>Dept Coordinator</div><div style={{ marginTop: '60px' }}>Ms. Peddinti Neeraja</div></div>
+                    <div style={{ textAlign: 'right' }}><div>Head of Dept</div><div style={{ marginTop: '60px' }}>Dr. M. Sowmya Vani</div></div>
                   </div>
                 </div>
               );
             }
-
-            // ---
-            // --- ALL OTHER PAGES (TOC, BioData, Content) ---
-            // ---
-            let pageContent;
-
-            // --- 2. TABLE OF CONTENTS (PAGE 1) ---
-            if (sectionId === 'toc') {
-              pageContent = (
-                <>
-                  <h3 style={styles.mainHeading}>TABLE OF CONTENTS</h3>
-                  <ul style={styles.tocList}>
-                    {tocPage1Items.map((sec) => (
-                      <React.Fragment key={sec.id}>
-                        <li style={styles.tocItem}>
-                          <span>{sec.title}</span>
-                          <span>{getPageNumForSection(sec.id)}</span>
-                        </li>
-                        {sec.subsections.length > 0 && (
-                          <ul style={styles.tocSubList}>
-                            {sec.subsections.map((sub) => (
-                              <li key={sub.id} style={styles.tocSubItem}>
-                                <span>{sub.title}</span>
-                                <span>{getPageNumForSection(sub.id)}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                      </React.Fragment>
-                    ))}
-                  </ul>
-                </>
-              );
+            else if (page.sectionId === 'certificateScan') {
+              const imgUrl = Array.isArray(content) ? content[page.pageIndex] : content;
+              pageContent = (<div style={{ ...styles.borderFrame, justifyContent: 'center', padding: '20px' }}>{imgUrl ? <img src={imgUrl} alt="Cert" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} /> : <div style={{ textAlign: 'center' }}><h3>CERTIFICATE SCAN</h3><p>No image.</p></div>}</div>);
             }
-
-            // --- NEW: TABLE OF CONTENTS (PAGE 2) ---
-            else if (sectionId === 'toc-2') {
-              pageContent = (
-                <>
-                  <div style={{ height: '30px' }}></div>
-                  <ul style={styles.tocList}>
-                    {tocPage2Items.map((sec) => (
-                      <React.Fragment key={sec.id}>
-                        <li style={styles.tocItem}>
-                          <span>{sec.title}</span>
-                          <span>{getPageNumForSection(sec.id)}</span>
-                        </li>
-                        {sec.subsections.length > 0 && (
-                          <ul style={styles.tocSubList}>
-                            {sec.subsections.map((sub) => (
-                              <li key={sub.id} style={styles.tocSubItem}>
-                                <span>{sub.title}</span>
-                                <span>{getPageNumForSection(sub.id)}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                      </React.Fragment>
-                    ))}
-                  </ul>
-                </>
-              );
+            else if (page.sectionId === 'toc') {
+              pageContent = (<div style={{ ...styles.borderFrame, justifyContent: 'flex-start' }}><h2 style={{ textAlign: 'center', fontSize: '20pt', fontWeight: 'bold', textDecoration: 'underline', marginBottom: '30px' }}>INDEX</h2><p style={{ textAlign: 'center' }}>Table of Contents (Auto-Generated)</p></div>);
             }
-
-            // --- 3. STUDENT BIO-DATA (RESUME) PAGE ---
-            else if (sectionId === 'bioData') {
-              // --- FIX: Use selectedStudent ---
-              const bioDataContent = selectedProject?.sections?.bioData?.content || getDefaultContent('bioData');
+            else if (page.sectionId === 'weeklyOverview') {
+              const allRows = Array.isArray(content) ? content : getDefaultContent('weeklyOverview');
+              const pageRows = allRows.slice(page.pageIndex * 12, (page.pageIndex * 12) + 12);
               pageContent = (
-                <div style={styles.resumePage}>
-                  <div style={styles.resumeHeader}>
-                    <h1 style={{ fontSize: '24pt', margin: '0 0 5px 0' }}>{bioDataContent.name || 'STUDENT NAME'}</h1>
-                    <div style={styles.resumeContact}>
-                      <span>{bioDataContent.phone || 'Phone'}</span>
-                      <span>{bioDataContent.email || 'Email'}</span>
-                      {bioDataContent.github && <span>GitHub</span>}
-                      {bioDataContent.linkedin && <span>LinkedIn</span>}
-                    </div>
-                  </div>
-                  <div style={styles.resumeSection}>
-                    <h3 style={styles.resumeSectionH3}>PROFESSIONAL SUMMARY</h3>
-                    <p style={{ ...styles.bodyText, textAlign: 'left' }}>{bioDataContent.summary || 'Not provided.'}</p>
-                  </div>
-                  <div style={styles.resumeSection}>
-                    <h3 style={styles.resumeSectionH3}>CORE TECHNICAL SKILLS</h3>
-                    {renderSkills(bioDataContent.techSkills)}
-                  </div>
-                  <div style={styles.resumeSection}>
-                    <h3 style={styles.resumeSectionH3}>SOFT SKILLS</h3>
-                    {renderSkills(bioDataContent.softSkills)}
-                  </div>
-                  <div style={styles.resumeSection}>
-                    <h3 style={styles.resumeSectionH3}>EXPERIENCE AND INTERNSHIP</h3>
-                    <p style={{ ...styles.bodyText, textAlign: 'left' }}>{renderWithBreaks(bioDataContent.experience)}</p>
-                  </div>
-                  <div style={styles.resumeSection}>
-                    <h3 style={styles.resumeSectionH3}>PROJECTS</h3>
-                    <p style={{ ...styles.bodyText, textAlign: 'left' }}>{renderWithBreaks(bioDataContent.projects)}</p>
-                  </div>
-                  <div style={styles.resumeSection}>
-                    <h3 style={styles.resumeSectionH3}>EDUCATION</h3>
-                    <p style={{ ...styles.bodyText, textAlign: 'left' }}>{renderWithBreaks(bioDataContent.education)}</p>
-                  </div>
+                <div style={{ ...styles.borderFrame, justifyContent: 'flex-start', paddingTop: '40px' }}>
+                  <h3 style={{ fontSize: '18pt', fontWeight: 'bold', textDecoration: 'underline', marginBottom: '20px' }}>WEEKLY OVERVIEW</h3>
+                  <table style={styles.table}><thead><tr><th style={styles.th}>Week</th><th style={styles.th}>Date</th><th style={styles.th}>Topic</th></tr></thead><tbody>
+                    {pageRows.map((r, i) => (<tr key={i}><td style={styles.td}>{r.week}</td><td style={styles.td}>{r.date}</td><td style={styles.td}>{r.topic}</td></tr>))}
+                  </tbody></table>
                 </div>
               );
             }
-
-            // --- 4. ALL OTHER STANDARD PAGES (Intro, Abstract, etc.) ---
             else {
-              // --- FIX: Use selectedStudent ---
-              const content = selectedProject?.sections?.[sectionId]?.content;
-              const defaultText = getDefaultContent(sectionId);
-              let contentPages = [];
-              if (Array.isArray(content)) contentPages = content.length > 0 ? content : [defaultText];
-              else if (content) contentPages = [content];
-              else contentPages = [defaultText];
-              const pageText = contentPages[subPageIndex] || '';
-
-              const parentSection = parentTitle ? reportStructure.find(s => s.title === parentTitle) : null;
-              const isFirstSubsection = parentSection && parentSection.subsections[0].id === sectionId;
+              const text = Array.isArray(content) ? content[page.pageIndex] : (content || getDefaultContent(page.sectionId));
+              const isImage = section.inputType === 'image';
+              const imgUrl = Array.isArray(content) ? content[page.pageIndex] : content;
+              const isSubHeading = ['orgInfo', 'methodologies', 'benefits'].includes(page.sectionId);
+              const titleStyle = isSubHeading ? { textAlign: 'left', fontSize: '14pt', fontWeight: 'bold', marginBottom: '20px' } : { textAlign: 'center', fontSize: '18pt', fontWeight: 'bold', textDecoration: 'underline', marginBottom: '30px', textTransform: 'uppercase' };
 
               pageContent = (
-                <>
-                  {parentTitle && isFirstSubsection && subPageIndex === 0 && (
-                    <h3 style={styles.mainHeading}>
-                      {parentTitle.toUpperCase()}
-                    </h3>
-                  )}
-                  {!parentTitle && subPageIndex === 0 && (
-                    <h3 style={styles.mainHeading}>
-                      {title.toUpperCase()}
-                    </h3>
-                  )}
-                  {parentTitle && subPageIndex === 0 && (
-                    <h4 style={styles.subHeading}>
-                      {title}
-                    </h4>
-                  )}
-
-                  {subPageIndex > 0 && (
-                    <div style={{ height: '20px' }}></div>
-                  )}
-                  {sectionDef && sectionDef.inputType === 'image' ? (
-                    <div style={{ width: '100%', textAlign: 'center', marginTop: '20px' }}>
-                      {pageText ? (
-                        <img src={pageText} alt={title} style={{ maxWidth: '100%', height: 'auto', border: '1px solid #ccc' }} />
-                      ) : (
-                        <p style={{ ...styles.bodyText, textAlign: 'center', fontStyle: 'italic' }}>No image submitted.</p>
-                      )}
-                    </div>
-                  ) : (
-                    <p style={styles.bodyText}>
-                      {pageText}
-                    </p>
-                  )}
-                </>
+                <div style={{ ...styles.borderFrame, justifyContent: 'flex-start', alignItems: 'stretch', padding: '40px' }}>
+                  {page.pageIndex === 0 && <h3 style={titleStyle}>{page.parentTitle ? page.parentTitle : page.title}</h3>}
+                  {isImage ? <div style={{ textAlign: 'center' }}>{imgUrl ? <img src={imgUrl} alt="Diagram" style={{ maxWidth: '100%', maxHeight: '800px' }} /> : 'No image'}</div>
+                    : <div style={{ fontSize: '13pt', lineHeight: '1.8', textAlign: 'justify', whiteSpace: 'pre-wrap' }}>{text}</div>}
+                </div>
               );
             }
-
-            // ---
-            // --- RENDER THE STANDARD BORDERED PAGE (Unchanged) ---
-            // ---
-            return (
-              <div className="flipper-page-slot" key={`slot-${page.id}`}>
-                <div style={styles.a4Page}>
-
-                  <div style={styles.pageHeaderContainer}>
-                    <span>{studentRollNo}</span>
-                    <span>{shortTitle}</span>
-                  </div>
-
-                  <div style={styles.contentBorder}>
-                    {/* Page content (from logic above) goes here */}
-                    {pageContent}
-                  </div>
-
-                  <div style={styles.pageFooter}>
-                    <span>MBU 2026</span>
-                    <span>{currentPageNum}</span>
-                  </div>
-
-                </div>
-              </div>
-            );
-
+            return (<div key={idx} className="flipper-page-slot"><div className="report-page-a4" style={styles.a4}>{pageContent}{idx > 2 && <div style={{ position: 'absolute', bottom: '30px', left: '0', width: '100%', textAlign: 'center' }}>{idx - 2}</div>}</div></div>);
           })}
         </div>
       </div>
     );
-  }; 
-
+  };
   return (
     <div className="hod-dashboard">
       <header className="hod-header">
@@ -894,6 +480,7 @@ function HodDashboard({ user, onLogout }) {
                   <thead>
                     <tr>
                       <th>Name</th>
+                      <th>Email</th> {/* New Column */}
                       <th>Roll Number</th>
                       <th>Class</th>
                       <th>Faculty</th>
@@ -902,13 +489,15 @@ function HodDashboard({ user, onLogout }) {
                     </tr>
                   </thead>
                   <tbody>
-                    {loading && <tr><td colSpan="6">Loading...</td></tr>}
+                    {loading && <tr><td colSpan="7">Loading...</td></tr>}
                     {!loading && filteredStudents.length === 0 && (
-                      <tr><td colSpan="6">No students found.</td></tr>
+                      <tr><td colSpan="7">No students found.</td></tr>
                     )}
                     {filteredStudents.map(student => (
                       <tr key={student.uid}>
                         <td>{student.name}</td>
+                        {/* New Email Column - shows email so you can help them */}
+                        <td style={{ fontSize: '0.9em', color: '#555' }}>{student.email}</td>
                         <td>{student.rollNumber}</td>
                         <td>{student.className}</td>
                         <td>{student.facultyName}</td>
@@ -916,18 +505,28 @@ function HodDashboard({ user, onLogout }) {
                           <div className="progress-bar-container">
                             <div
                               className="progress-bar-fill"
-                              style={{ width: `${student.status}` }}
+                              style={{ width: `${student.status === 'Completed' ? '100%' : student.status}` }}
                             ></div>
                           </div>
                           <span className="progress-text">{student.status}</span>
                         </td>
                         <td>
-                          <button
-                            className="view-button"
-                            onClick={() => openProjectPreview(student)}
-                          >
-                            View
-                          </button>
+                          <div style={{ display: 'flex', gap: '10px' }}>
+                            <button
+                              className="view-button"
+                              onClick={() => openProjectPreview(student)}
+                            >
+                              View
+                            </button>
+                            {/* New Delete Button */}
+                            <button
+                              className="view-button" // You can style this differently if you want, e.g., create a .delete-button class
+                              style={{ backgroundColor: '#dc3545' }} // Red color for danger
+                              onClick={() => handleDeleteStudent(student.uid, student.name)}
+                            >
+                              Delete
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -985,94 +584,71 @@ function HodDashboard({ user, onLogout }) {
         </div>
       </main>
 
-      {/* --- Student Project Preview Modal --- */}
+      {/* --- 4. REPLACEMENT: MODAL WITH SIDEBAR & PREVIEW --- */}
       {isPreviewOpen && (
         <div className="modal-overlay" onClick={closeProjectPreview}>
-          <div className="modal-content-project" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-content" style={{ width: '95%', maxWidth: '1400px', height: '90vh', display: 'flex', flexDirection: 'column' }} onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3 className="editor-title">
-                Reviewing: {selectedStudent.name} ({selectedStudent.rollNumber})
-              </h3>
-              <button type="button" onClick={closeProjectPreview} className="modal-close-button">&times;</button>
+              <h3>Reviewing: {selectedStudent.name}</h3>
+              <button onClick={closeProjectPreview}>X</button>
             </div>
 
-            <div className="modal-body-project">
-              {error && <p className="form-error" style={{ margin: '20px' }}>{error}</p>}
-              <div className="review-container">
-                {/* --- Sub-Column 1: Section List --- */}
-                <div className="section-list-nav">
-                  <h3 className="column-title">Project Status</h3>
-                  <ul className="nav-list">
-                    {reportStructure.map(section => {
-                      const isNonEditable = !section.isPage && section.subsections.length > 0;
-                      return (
-                        <li key={section.id} className="nav-item-main">
-                          <span className={`${isNonEditable ? 'non-editable' : ''}`}>
-                            <span className="status-dot"></span>
-                            {section.title}
-                          </span>
-                          {section.subsections.length > 0 && (
-                            <ul className="nav-sub-list">
-                              {section.subsections.map(sub => {
-                                const status = getSectionStatus(sub.id);
-                                return (
-                                  <li key={sub.id} className={`nav-item-sub status-${status}`}>
-                                    <span className="status-dot"></span>
-                                    {sub.title}
-                                    <span className="review-status">{status}</span>
-                                  </li>
-                                );
-                              })}
-                            </ul>
-                          )}
-                          {section.isPage && section.subsections.length === 0 && (
-                            <ul className="nav-sub-list">
-                              <li className={`nav-item-sub status-${getSectionStatus(section.id)}`}>
-                                <span className="status-dot"></span>
-                                {section.title}
-                                <span className="review-status">{getSectionStatus(section.id)}</span>
-                              </li>
-                            </ul>
-                          )}
-                        </li>
-                      );
-                    })}
-                  </ul>
+            {/* Split View Container */}
+            <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+
+              {/* LEFT: Sidebar (Report Sections & Status) */}
+              <div className="project-nav-panel" style={{ width: '250px', borderRight: '1px solid #ddd', overflowY: 'auto', padding: '15px', background: '#f9f9f9' }}>
+                <h4 style={{ marginBottom: '15px', borderBottom: '2px solid #333', paddingBottom: '5px' }}>Report Sections</h4>
+                <div className="nav-tree">
+                  {reportStructure.map(section => (
+                    <div key={section.id} className="nav-group" style={{ marginBottom: '10px' }}>
+                      <div className="nav-group-title" style={{ fontWeight: 'bold', fontSize: '14px', marginBottom: '5px' }}>{section.title}</div>
+
+                      {section.subsections.length > 0 ? (
+                        <div className="nav-sub-items" style={{ paddingLeft: '10px' }}>
+                          {section.subsections.map(sub => {
+                            const status = selectedProject?.sections?.[sub.id]?.status || 'pending';
+                            const color = status === 'approved' ? '#10b981' : (status === 'rejected' ? '#ef4444' : '#f59e0b');
+                            return (
+                              <div key={sub.id} style={{ display: 'flex', alignItems: 'center', fontSize: '13px', padding: '5px 0', color: '#555' }}>
+                                <span style={{ height: '8px', width: '8px', borderRadius: '50%', backgroundColor: color, marginRight: '8px' }}></span>
+                                {sub.title}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        section.isPage && (
+                          <div className="nav-sub-items" style={{ paddingLeft: '10px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', fontSize: '13px', padding: '5px 0', color: '#555' }}>
+                              <span style={{ height: '8px', width: '8px', borderRadius: '50%', backgroundColor: (selectedProject?.sections?.[section.id]?.status === 'approved' ? '#10b981' : '#f59e0b'), marginRight: '8px' }}></span>
+                              {section.title}
+                            </div>
+                          </div>
+                        )
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* RIGHT: Preview Canvas */}
+              <div className="preview-panel" style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#e5e7eb' }}>
+                <div className="preview-toolbar" style={{ padding: '10px', background: 'white', borderBottom: '1px solid #ddd', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '20px' }}>
+                  <button onClick={() => handlePreviewNav('prev')} disabled={currentPageIndex === 0}>Previous</button>
+                  <span>Page {currentPageIndex + 1} / {totalPages}</span>
+                  <button onClick={() => handlePreviewNav('next')} disabled={currentPageIndex === totalPages - 1}>Next</button>
                 </div>
 
-                {/* --- Sub-Column 2: Page Preview --- */}
-                <div className="preview-card">
-                  <div className="preview-header">
-                    <h2 className="card-title">Project Preview</h2>
-                    <div className="preview-nav">
-                      <button
-                        className="preview-nav-button"
-                        onClick={() => handlePreviewNav('prev')}
-                        disabled={currentPageIndex === 0 || loadingProject || !selectedProject}
-                      >
-                        &larr;
-                      </button>
-                      <span>
-                        Page {currentPageIndex + 1} of {totalPages}
-                      </span>
-                      <button
-                        className="preview-nav-button"
-                        onClick={() => handlePreviewNav('next')}
-                        disabled={currentPageIndex === totalPages - 1 || loadingProject || !selectedProject}
-                      >
-                        &rarr;
-                      </button>
-                    </div>
-                  </div>
+                <div className="preview-canvas" style={{ flex: 1, overflow: 'auto', padding: '20px', display: 'flex', justifyContent: 'center', alignItems: 'flex-start' }}>
                   {renderPreview()}
                 </div>
               </div>
-            </div>
 
+            </div>
           </div>
         </div>
       )}
-
     </div>
   );
 }

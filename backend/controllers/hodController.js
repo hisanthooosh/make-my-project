@@ -188,9 +188,48 @@ const createClass = async (req, res) => {
   }
 };
 
+// @desc    Delete a student (Auth + Firestore + Project)
+// @route   DELETE /api/hod/delete-student/:studentId
+// @access  Private (HOD Only)
+const deleteStudent = async (req, res) => {
+  try {
+    const db = admin.firestore();
+    const { studentId } = req.params;
+
+    if (!studentId) {
+      return res.status(400).json({ message: 'Student ID is required' });
+    }
+
+    console.log(`HOD deleting student: ${studentId}`);
+
+    // 1. Delete from Firebase Authentication
+    await admin.auth().deleteUser(studentId);
+
+    // 2. Delete from Firestore 'users' collection
+    await db.collection('users').doc(studentId).delete();
+
+    // 3. Delete their Project (if it exists)
+    const projectQuery = await db.collection('projects').where('studentUid', '==', studentId).get();
+    if (!projectQuery.empty) {
+      const batch = db.batch();
+      projectQuery.docs.forEach(doc => {
+        batch.delete(doc.ref);
+      });
+      await batch.commit();
+    }
+
+    res.status(200).json({ message: 'Student deleted successfully' });
+
+  } catch (error) {
+    console.error('Error deleting student:', error);
+    res.status(500).json({ message: 'Server error while deleting student' });
+  }
+};
+
 module.exports = {
   getDashboardStats,
   getStudentProjectForHod,
-  createClass
+  createClass,
   // Other functions like assignMentor, deleteUser can be added back if needed
+  deleteStudent // <--- ADD THIS LINE
 };

@@ -7,7 +7,8 @@ const { requireAuth, hodCheck } = require('../middleware/authMiddleware');
 const {
   getDashboardStats,
   getStudentProjectForHod,
-  createClass
+  createClass,
+  deleteStudent // <--- 1. Import this
 } = require('../controllers/hodController');
 
 // Import from userController
@@ -29,5 +30,8 @@ router.post('/create-class', createClass);
 
 // GET route to fetch a single student's project for preview
 router.get('/student-project/:studentId', getStudentProjectForHod);
+// --- ADD THIS NEW ROUTE ---
+// DELETE route to remove a student
+router.delete('/delete-student/:studentId', deleteStudent);
 
 module.exports = router;
