@@ -20,6 +20,7 @@ const userRoutes = require('./routes/userRoutes');
 const hodRoutes = require('./routes/hodRoutes');
 const projectRoutes = require('./routes/projectRoutes');
 const facultyRoutes = require('./routes/facultyRoutes');
+const paymentRoutes = require('./routes/paymentRoutes');
 
 
 // --- 1. INITIALIZE FIREBASE ADMIN ---
@@ -79,6 +80,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/hod', hodRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/faculty', facultyRoutes);
+app.use('/api/payment', paymentRoutes); // <--- ADD THIS LINE
 
 // Basic Health Check Route
 app.get('/', (req, res) => {

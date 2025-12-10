@@ -25,12 +25,19 @@ const updateProjectSection = async (req, res) => {
   try {
     const db = admin.firestore();
     const studentUid = req.user.uid;
-    
+    // --- ADD THIS SECURITY CHECK ---
+    if (!req.user.isPaid) {
+      return res.status(403).json({
+        success: false,
+        message: 'Payment required to save or edit reports.'
+      });
+    }
+
     console.log("updateProjectSection called by:", studentUid);
-    
+
     // Get data
-    let { section, content, status } = req.body; 
-    
+    let { section, content, status } = req.body;
+
     if (!section) {
       return res.status(400).json({ success: false, message: 'Section name is required' });
     }
@@ -39,8 +46,8 @@ const updateProjectSection = async (req, res) => {
     // The log showed content: [ ["url"], "url" ]. Firestore CRASHES on nested arrays.
     // This line forces it to become [ "url", "url" ]
     if (Array.isArray(content)) {
-        console.log("Flattening nested array content...");
-        content = content.flat(Infinity);
+      console.log("Flattening nested array content...");
+      content = content.flat(Infinity);
     }
 
     // Sanitize everything
@@ -50,14 +57,14 @@ const updateProjectSection = async (req, res) => {
 
     // Find the project
     const projectQuery = await db.collection('projects').where('studentUid', '==', studentUid).limit(1).get();
-    
+
     if (projectQuery.empty) {
       // --- CREATE NEW PROJECT ---
       const newProjectData = {
         studentUid: studentUid,
         mentorUid: req.user.assignedMentorId || null,
         sections: {
-          [safeSection]: { 
+          [safeSection]: {
             content: safeContent,
             status: safeStatus
           }
@@ -137,7 +144,7 @@ const uploadProjectImages = async (req, res) => {
     }
 
     const projectQuery = await db.collection('projects').where('studentUid', '==', studentUid).limit(1).get();
-    
+
     if (projectQuery.empty) {
       // Safe create for images
       const projectData = {
@@ -159,7 +166,7 @@ const uploadProjectImages = async (req, res) => {
         updatedAt: admin.firestore.FieldValue.serverTimestamp()
       });
     }
-    
+
     res.status(200).json({ message: 'Images uploaded successfully', images: imageUrls });
 
   } catch (error) {

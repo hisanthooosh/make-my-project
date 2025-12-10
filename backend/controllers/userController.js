@@ -10,8 +10,11 @@ const registerUser = async (req, res) => {
     const { uid, name, email, role, rollNumber, assignedMentorId, assignedClassId, designation, department } = req.body;
     const userData = { uid, name, email, role };
 
+    // --- UPDATED BLOCK START ---
     if (role === 'student') {
       userData.rollNumber = rollNumber;
+      userData.isPaid = false; // <--- ADDED: Default to unpaid for new students
+
       if (assignedMentorId) {
         userData.assignedMentorId = assignedMentorId;
       }
@@ -19,6 +22,7 @@ const registerUser = async (req, res) => {
         userData.assignedClassId = assignedClassId;
       }
     }
+    // --- UPDATED BLOCK END ---
 
     // Capture department/designation for Faculty/HOD users signing up
     if (role === 'faculty' || role === 'hod') {
@@ -40,7 +44,6 @@ const registerUser = async (req, res) => {
     res.status(500).json({ message: 'Server error while registering user' });
   }
 };
-
 // --- getUserProfile ---
 const getUserProfile = async (req, res) => {
   try {

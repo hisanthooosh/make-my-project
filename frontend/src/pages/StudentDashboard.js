@@ -106,6 +106,12 @@ const StudentDashboard = ({ user, onLogout }) => {
 
   // --- Data Fetching ---
   useEffect(() => {
+    // [NEW CODE] Stop here if user is not paid
+    if (!user.isPaid) {
+      setLoading(false);
+      return;
+    }
+    // [END NEW CODE]
     const fetchFullProject = async () => {
       setLoading(true);
       try {
@@ -1048,14 +1054,101 @@ const StudentDashboard = ({ user, onLogout }) => {
     if (dir === 'next' && currentPageIndex < totalPages - 1) setCurrentPageIndex(currentPageIndex + 1);
     if (dir === 'prev' && currentPageIndex > 0) setCurrentPageIndex(currentPageIndex - 1);
   };
+  // --- NEW: HANDLE PAYMENT LOGIC ---
+  const handlePayment = async () => {
+    try {
+      setLoading(true);
 
+      // 1. Create Order on Backend
+      const { data: order } = await api.post('/payment/create-order');
+
+      // 2. Open Razorpay Options
+      const options = {
+        key: "rzp_live_RpyJ3fMyy7SPLD", // <--- REPLACE THIS WITH YOUR ACTUAL KEY ID
+        amount: order.amount,
+        currency: order.currency,
+        name: "Project Report System",
+        description: "One-time Access Fee",
+        image: MBU_Logo,
+        order_id: order.id,
+        handler: async function (response) {
+          // 3. Verify Payment on Backend
+          try {
+            await api.post('/payment/verify', response);
+            alert("Payment Successful! Unlocking Dashboard...");
+            window.location.reload(); // Reloads page -> Refetches user -> Sees isPaid: true -> Unlocks
+          } catch (err) {
+            console.error(err);
+            alert("Payment verification failed on server.");
+          }
+        },
+        prefill: {
+          name: user.name,
+          email: user.email,
+        },
+        theme: {
+          color: "#007bff",
+        },
+      };
+
+      const rzp1 = new window.Razorpay(options);
+      rzp1.open();
+      setLoading(false);
+    } catch (err) {
+      console.error(err);
+      setLoading(false);
+      alert("Could not initiate payment. Please try again.");
+    }
+  };
+  // --- NEW: IF NOT PAID, SHOW PAYMENT SCREEN ---
+  if (!user.isPaid) {
+    return (
+      <div className="payment-wall-container" style={{
+        height: '100vh', display: 'flex', flexDirection: 'column',
+        justifyContent: 'center', alignItems: 'center', background: '#f8f9fa'
+      }}>
+        <div style={{
+          background: 'white', padding: '50px', borderRadius: '15px',
+          boxShadow: '0 10px 25px rgba(0,0,0,0.1)', textAlign: 'center', maxWidth: '400px'
+        }}>
+          <img src={MBU_Logo} alt="Logo" style={{ height: '80px', marginBottom: '20px' }} />
+          <h2 style={{ color: '#333' }}>Complete Registration</h2>
+          <p style={{ margin: '15px 0', color: '#666', lineHeight: '1.5' }}>
+            To access the Report Builder, Auto-Formatting, and PDF Downloads,
+            a one-time platform fee is required.
+          </p>
+          <div style={{ margin: '30px 0' }}>
+            <span style={{ fontSize: '1.2rem', color: '#555', verticalAlign: 'top' }}>₹</span>
+            <span style={{ fontSize: '3.5rem', fontWeight: 'bold', color: '#2c3e50', lineHeight: '1' }}>29</span>
+          </div>
+          <button
+            onClick={handlePayment}
+            disabled={loading}
+            style={{
+              width: '100%', padding: '15px', fontSize: '18px', fontWeight: 'bold',
+              background: '#007bff', color: 'white', border: 'none', borderRadius: '8px',
+              cursor: loading ? 'not-allowed' : 'pointer', transition: 'background 0.3s'
+            }}
+          >
+            {loading ? 'Processing...' : 'Pay Now & Unlock'}
+          </button>
+
+          <div style={{ marginTop: '20px', borderTop: '1px solid #eee', paddingTop: '15px' }}>
+            <button onClick={onLogout} style={{ background: 'none', border: 'none', color: '#999', cursor: 'pointer', textDecoration: 'underline' }}>Logout</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ... (Your existing 'return' statement starts here)
   return (
     <div className="student-dashboard">
       <header className="student-header">
         <h1>Student Dashboard</h1>
         {/* --- NEW: PROGRESS TRACKER DROPDOWNS --- */}
         <div className="header-progress-bar">
-          
+
           {/* 1. DRAFT DROPDOWN */}
           <div className="progress-dropdown draft">
             <div className="progress-label">Drafting: {progressStats.draft.percent}%</div>
@@ -1064,7 +1157,7 @@ const StudentDashboard = ({ user, onLogout }) => {
               <ul>
                 {progressStats.draft.list.length > 0 ? (
                   progressStats.draft.list.map((item, idx) => <li key={idx}>{item}</li>)
-                ) : ( <li className="empty">No drafts yet</li> )}
+                ) : (<li className="empty">No drafts yet</li>)}
               </ul>
             </div>
           </div>
@@ -1077,7 +1170,7 @@ const StudentDashboard = ({ user, onLogout }) => {
               <ul>
                 {progressStats.submitted.list.length > 0 ? (
                   progressStats.submitted.list.map((item, idx) => <li key={idx}>{item}</li>)
-                ) : ( <li className="empty">Nothing submitted</li> )}
+                ) : (<li className="empty">Nothing submitted</li>)}
               </ul>
             </div>
           </div>
@@ -1090,7 +1183,7 @@ const StudentDashboard = ({ user, onLogout }) => {
               <ul>
                 {progressStats.approved.list.length > 0 ? (
                   progressStats.approved.list.map((item, idx) => <li key={idx}>{item}</li>)
-                ) : ( <li className="empty">No approvals yet</li> )}
+                ) : (<li className="empty">No approvals yet</li>)}
               </ul>
             </div>
           </div>
