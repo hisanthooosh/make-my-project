@@ -62,7 +62,8 @@ const StudentDashboard = ({ user, onLogout }) => {
   const [paginatedContent, setPaginatedContent] = useState(['']);
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [saveLoading, setSaveLoading] = useState(false);
+  // Change 'false' to 'null' so we can track specific actions
+  const [saveLoading, setSaveLoading] = useState(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const pdfPreviewRef = useRef(null);
@@ -82,14 +83,17 @@ const StudentDashboard = ({ user, onLogout }) => {
   // State for Weekly Overview
   const [weeklyData, setWeeklyData] = useState([]);
   // --- CALCULATE PROGRESS STATS (NEW) ---
+  // --- CALCULATE PROGRESS STATS (UPDATED) ---
   const progressStats = useMemo(() => {
-    const total = allSections.length;
+    // 1. Filter out TOC so it doesn't count towards the total
+    const calculableSections = allSections.filter(s => s.id !== 'toc');
+    const total = calculableSections.length;
+
     const drafts = [];
-    const submitted = []; // 'pending' status
+    const submitted = []; 
     const approved = [];
 
-    allSections.forEach(section => {
-      // Safely access status
+    calculableSections.forEach(section => {
       const status = project?.sections?.[section.id]?.status;
 
       if (status === 'draft') drafts.push(section.title);
@@ -261,7 +265,7 @@ const StudentDashboard = ({ user, onLogout }) => {
       }
     }
 
-    setSaveLoading(true);
+    setSaveLoading(status);
     let contentToSave;
 
     if (editingSectionId === 'titlePage') contentToSave = titlePageData;
@@ -287,13 +291,13 @@ const StudentDashboard = ({ user, onLogout }) => {
     } catch (err) {
       setError('Save failed: ' + err.message);
     }
-    setSaveLoading(false);
+    setSaveLoading(null);
   };
 
   // --- Image Upload (Updated for Multiple Screenshots) ---
   const handleImageUpload = async (file) => {
     if (!file) return;
-    setSaveLoading(true);
+    setSaveLoading('uploading');
     const formData = new FormData();
     formData.append('images', file);
     try {
@@ -311,7 +315,7 @@ const StudentDashboard = ({ user, onLogout }) => {
     } catch (err) {
       setError('Upload failed.');
     }
-    setSaveLoading(false);
+    setSaveLoading(null);
   };
 
   // --- Helper Functions for Weekly Editor ---
@@ -1149,18 +1153,7 @@ const StudentDashboard = ({ user, onLogout }) => {
         {/* --- NEW: PROGRESS TRACKER DROPDOWNS --- */}
         <div className="header-progress-bar">
 
-          {/* 1. DRAFT DROPDOWN */}
-          <div className="progress-dropdown draft">
-            <div className="progress-label">Drafting: {progressStats.draft.percent}%</div>
-            <div className="progress-menu">
-              <div className="menu-header">Drafts ({progressStats.draft.count})</div>
-              <ul>
-                {progressStats.draft.list.length > 0 ? (
-                  progressStats.draft.list.map((item, idx) => <li key={idx}>{item}</li>)
-                ) : (<li className="empty">No drafts yet</li>)}
-              </ul>
-            </div>
-          </div>
+         
 
           {/* 2. SUBMITTED DROPDOWN */}
           <div className="progress-dropdown submitted">
@@ -1223,8 +1216,21 @@ const StudentDashboard = ({ user, onLogout }) => {
             <div className="modal-header"><h3>Editing: {allSections.find(s => s.id === editingSectionId)?.title}</h3><button onClick={() => setIsModalOpen(false)}>X</button></div>
             <div className="modal-body">{renderEditorContent()}</div>
             <div className="modal-footer">
-              <button onClick={() => handleSaveSection('draft')} disabled={saveLoading}>Save Draft</button>
-              <button onClick={() => handleSaveSection('pending')} disabled={saveLoading}>Submit</button>
+              <button 
+                onClick={() => handleSaveSection('draft')} 
+                disabled={!!saveLoading} // Disable if ANY loading is happening
+                style={{ opacity: saveLoading ? 0.7 : 1 }}
+              >
+                {saveLoading === 'draft' ? 'Saving...' : 'Save Draft'}
+              </button>
+
+              <button 
+                onClick={() => handleSaveSection('pending')} 
+                disabled={!!saveLoading} 
+                style={{ opacity: saveLoading ? 0.7 : 1 }}
+              >
+                {saveLoading === 'pending' ? 'Submitting...' : 'Submit'}
+              </button>
             </div>
           </div>
         </div>

@@ -18,43 +18,33 @@ const AuthPage = () => {
   const [name, setName] = useState('');
   const [role, setRole] = useState('student');
   const [rollNumber, setRollNumber] = useState('');
-  const [designation, setDesignation] = useState(''); // <-- NEW
-  const [department, setDepartment] = useState('');   // <-- NEW
+  const [designation, setDesignation] = useState('');
+  const [department, setDepartment] = useState('');
 
-  // Mentor state
+  // Mentor & Class state
   const [mentors, setMentors] = useState([]);
   const [assignedMentorId, setAssignedMentorId] = useState('');
-
-  // --- NEW CLASS STATE ---
   const [classes, setClasses] = useState([]);
   const [assignedClassId, setAssignedClassId] = useState('');
-  // -----------------------
 
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // --- useEffect hook: Fetch Mentors and Classes on Signup ---
+  // --- Logic remains exactly the same ---
   useEffect(() => {
-    // This runs only on the Student Signup form
     if (!isLogin && role === 'student') {
       const fetchData = async () => {
         try {
-          // Fetch Mentors
           const { data: mentorData } = await axios.get('http://localhost:5000/api/users/mentors');
           setMentors(mentorData);
-          if (mentorData.length > 0) {
-            setAssignedMentorId(mentorData[0].uid);
-          }
+          if (mentorData.length > 0) setAssignedMentorId(mentorData[0].uid);
           
-          // Fetch Classes (NEW)
           const { data: classData } = await axios.get('http://localhost:5000/api/users/classes');
           setClasses(classData);
-          if (classData.length > 0) {
-            setAssignedClassId(classData[0].id); // Set default to the first class ID
-          }
+          if (classData.length > 0) setAssignedClassId(classData[0].id);
           
         } catch (err) {
-          setError('Could not load required lists (mentors/classes).');
+          setError('Could not load required lists.');
         }
       };
       fetchData();
@@ -67,11 +57,9 @@ const AuthPage = () => {
     setError('');
 
     try {
-      // Client-side auth creation
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // Data sent to Express backend
       const userData = {
         uid: user.uid,
         name: name,
@@ -79,17 +67,13 @@ const AuthPage = () => {
         role: role,
         rollNumber: rollNumber,
         assignedMentorId: assignedMentorId,
-        assignedClassId: assignedClassId, // <-- SEND THE SELECTED CLASS
-        
-       
-        designation: designation, // <-- NEW
-        department: department    // <-- NEW
+        assignedClassId: assignedClassId,
+        designation: designation,
+        department: department
       };
 
       await axios.post('http://localhost:5000/api/users/register', userData);
-      
       setLoading(false);
-
     } catch (err) {
       setError(err.message);
       setLoading(false);
@@ -110,162 +94,111 @@ const AuthPage = () => {
   };
 
   return (
-    <div className="auth-container">
-      <div className="form-card">
-        <h2>{isLogin ? 'Welcome Back' : 'Create Your Account'}</h2>
-        
-        {error && <p className="form-error">{error}</p>}
+    <div className="auth-split-screen">
+      
+      {/* --- LEFT SIDE: THE BIG ADVERTISEMENT --- */}
+      <div className="auth-left-ad">
+        <div className="brand-content">
+          <h1 className="brand-title">MAKE MY<br />PROJECT</h1>
+          <p className="brand-tagline">
+            Simplifying Academic Reports.<br/>
+            Professional Formatting. One-Click PDF.
+          </p>
+        </div>
+      </div>
 
-        <form onSubmit={isLogin ? handleLogin : handleSignup}>
+      {/* --- RIGHT SIDE: THE SCROLLABLE FORM --- */}
+      <div className="auth-right-form">
+        <div className="form-wrapper">
           
-          {/* --- Fields for SIGNUP only --- */}
-          {!isLogin && (
-            <>
-              <div className="form-group">
-                <label>Full Name</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                />
-              </div>
-              
-             <div className="form-group">
-                <label>I am a...</label>
-                <select className="form-select" value={role} onChange={(e) => setRole(e.target.value)}>
-                  <option value="student">Student</option>
-                  <option value="faculty">Faculty / Mentor</option>
-                  <option value="hod">HOD (Head of Department)</option>
-                </select>
-              </div>
-
-              {/* --- Show Department/Designation for Faculty/HOD --- */}
-              {(role === 'faculty' || role === 'hod') && (
-                <>
-                  <div className="form-group">
-                    <label>Designation</label>
-                    <input
-                      type="text"
-                      className="form-input"
-                      value={designation}
-                      onChange={(e) => setDesignation(e.target.value)}
-                      placeholder="e.g., Assistant Professor"
-                      required
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Department</label>
-                    <input
-                      type="text"
-                      className="form-input"
-                      value={department}
-                      onChange={(e) => setDepartment(e.target.value)}
-                      placeholder="e.g., Computer Applications"
-                      required
-                    />
-                  </div>
-                </>
-              )}
-              
-
-              {/* --- Show these fields ONLY for students --- */}
-              {role === 'student' && (
-                <>
-                  {/* NEW CLASS DROPDOWN */}
-                  <div className="form-group">
-                    <label>Select Your Class</label>
-                    <select 
-                      className="form-select"
-                      value={assignedClassId} 
-                      onChange={(e) => setAssignedClassId(e.target.value)}
-                      required
-                    >
-                      {classes.length === 0 ? (
-                        <option value="" disabled>Loading classes...</option>
-                      ) : (
-                        classes.map(cls => (
-                          <option key={cls.id} value={cls.id}>
-                            {cls.name}
-                          </option>
-                        ))
-                      )}
-                    </select>
-                    {classes.length === 0 && <p style={{fontSize: '12px', color: 'red'}}>*HOD must create a class before students can sign up.</p>}
-                  </div>
-                  {/* END NEW CLASS DROPDOWN */}
-
-
-                  <div className="form-group">
-                    <label>Roll Number</label>
-                    <input
-                      type="text"
-                      className="form-input"
-                      value={rollNumber}
-                      onChange={(e) => setRollNumber(e.target.value)}
-                      required
-                    />
-                  </div>
-                  
-                  <div className="form-group">
-                    <label>Select Your Mentor</label>
-                    <select 
-                      className="form-select"
-                      value={assignedMentorId} 
-                      onChange={(e) => setAssignedMentorId(e.target.value)}
-                      required
-                    >
-                      {mentors.length === 0 ? (
-                        <option value="" disabled>Loading mentors...</option>
-                      ) : (
-                        mentors.map(mentor => (
-                          <option key={mentor.uid} value={mentor.uid}>
-                            {mentor.name}
-                          </option>
-                        ))
-                      )}
-                    </select>
-                  </div>
-                </>
-              )}
-            </>
-          )}
-
-          {/* --- Fields for BOTH Login & Signup --- */}
-          <div className="form-group">
-            <label>Email</label>
-            <input
-              type="email"
-              className="form-input"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
+          <div className="auth-header">
+            <h2>{isLogin ? 'Welcome Back!' : 'Create Account'}</h2>
+            <p>{isLogin ? 'Enter your details to access your dashboard.' : 'Get started with your project journey.'}</p>
           </div>
 
-          <div className="form-group">
-            <label>Password</label>
-            <input
-              type="password"
-              className="form-input"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
+          {error && <div className="form-error">⚠ {error}</div>}
+
+          <form onSubmit={isLogin ? handleLogin : handleSignup}>
+            
+            {/* --- SIGNUP FIELDS --- */}
+            {!isLogin && (
+              <>
+                <div className="form-group">
+                  <label>Full Name</label>
+                  <input type="text" className="form-input" placeholder="e.g. Rahul Sharma" value={name} onChange={e => setName(e.target.value)} required />
+                </div>
+                
+                <div className="form-group">
+                  <label>I am a...</label>
+                  <select className="form-select" value={role} onChange={e => setRole(e.target.value)}>
+                    <option value="student">Student</option>
+                    <option value="faculty">Faculty / Mentor</option>
+                    <option value="hod">HOD</option>
+                  </select>
+                </div>
+
+                {(role === 'faculty' || role === 'hod') && (
+                  <>
+                    <div className="form-group">
+                      <label>Designation</label>
+                      <input type="text" className="form-input" value={designation} onChange={e => setDesignation(e.target.value)} required />
+                    </div>
+                    <div className="form-group">
+                      <label>Department</label>
+                      <input type="text" className="form-input" value={department} onChange={e => setDepartment(e.target.value)} required />
+                    </div>
+                  </>
+                )}
+                
+                {role === 'student' && (
+                  <>
+                    <div className="form-group">
+                      <label>Class / Section</label>
+                      <select className="form-select" value={assignedClassId} onChange={e => setAssignedClassId(e.target.value)} required>
+                        {classes.length === 0 ? <option disabled>Loading...</option> : classes.map(cls => <option key={cls.id} value={cls.id}>{cls.name}</option>)}
+                      </select>
+                    </div>
+                    <div className="form-group">
+                      <label>Roll Number</label>
+                      <input type="text" className="form-input" value={rollNumber} onChange={e => setRollNumber(e.target.value)} required />
+                    </div>
+                    <div className="form-group">
+                      <label>Assigned Mentor</label>
+                      <select className="form-select" value={assignedMentorId} onChange={e => setAssignedMentorId(e.target.value)} required>
+                        {mentors.length === 0 ? <option disabled>Loading...</option> : mentors.map(m => <option key={m.uid} value={m.uid}>{m.name}</option>)}
+                      </select>
+                    </div>
+                  </>
+                )}
+              </>
+            )}
+
+            {/* --- COMMON FIELDS --- */}
+            <div className="form-group">
+              <label>Email Address</label>
+              <input type="email" className="form-input" placeholder="name@example.com" value={email} onChange={e => setEmail(e.target.value)} required />
+            </div>
+
+            <div className="form-group">
+              <label>Password</label>
+              <input type="password" className="form-input" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} required />
+            </div>
+
+            <button type="submit" className="form-button" disabled={loading}>
+              {loading ? 'Processing...' : (isLogin ? 'Sign In' : 'Create Account')}
+            </button>
+          </form>
+
+          <div className="toggle-section">
+            <p>
+              {isLogin ? "New here?" : "Already have an account?"}
+              <span className="toggle-link" onClick={() => { setIsLogin(!isLogin); setError(''); }}>
+                {isLogin ? 'Create Account' : 'Sign In'}
+              </span>
+            </p>
           </div>
 
-          <button type="submit" className="form-button" disabled={loading}>
-            {loading ? 'Loading...' : (isLogin ? 'Login' : 'Sign Up')}
-          </button>
-        </form>
-
-        <p className="toggle-text">
-          {isLogin ? "Don't have an account?" : "Already have an account?"}
-          <span className="toggle-link" onClick={() => setIsLogin(!isLogin)}>
-            {isLogin ? ' Login' : ' Sign Up'}
-          </span>
-        </p>
+        </div>
       </div>
     </div>
   );

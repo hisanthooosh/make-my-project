@@ -185,24 +185,31 @@ const FacultyDashboard = ({ user, onLogout }) => {
   };
 
   // --- PROGRESS STATS (For Selected Student) ---
+  // --- PROGRESS STATS (UPDATED: Ignores TOC) ---
+  // --- PROGRESS STATS (UPDATED: No TOC, No Drafts) ---
   const studentStats = useMemo(() => {
     if (!project) return null;
-    const total = allSections.length;
-    let approved = 0, pending = 0, draft = 0;
 
-    allSections.forEach(sec => {
-      const status = project.sections?.[sec.id]?.status || 'draft'; // default to draft if missing
+    // 1. Filter out TOC (Index) so it doesn't mess up the count
+    const realSections = allSections.filter(s => s.id !== 'toc');
+    const total = realSections.length;
+
+    let approved = 0;
+    let pending = 0;
+
+    // 2. Count only Approved and Pending (Submitted)
+    realSections.forEach(sec => {
+      const status = project.sections?.[sec.id]?.status || 'draft';
       if (status === 'approved') approved++;
       else if (status === 'pending') pending++;
-      else draft++;
     });
 
+    // 3. Calculate Percentages
     return {
-      approved: Math.round((approved / total) * 100),
-      pending: Math.round((pending / total) * 100),
-      draft: Math.round((draft / total) * 100),
       approvedCount: approved,
-      pendingCount: pending
+      approvedPercent: Math.round((approved / total) * 100),
+      pendingCount: pending,
+      pendingPercent: Math.round((pending / total) * 100)
     };
   }, [project]);
 
@@ -693,9 +700,13 @@ const FacultyDashboard = ({ user, onLogout }) => {
 
                 {studentStats && (
                   <div className="progress-pills">
-                    <div className="pill pending">Pending: {studentStats.pendingCount}</div>
-                    <div className="pill approved">Approved: {studentStats.approvedCount}</div>
-                    <div className="pill draft">Drafting: {studentStats.draft}%</div>
+                    {/* Only showing Submitted (Pending) and Approved */}
+                    <div className="pill pending">
+                      Submitted: {studentStats.pendingCount} ({studentStats.pendingPercent}%)
+                    </div>
+                    <div className="pill approved">
+                      Approved: {studentStats.approvedCount} ({studentStats.approvedPercent}%)
+                    </div>
                   </div>
                 )}
               </div>

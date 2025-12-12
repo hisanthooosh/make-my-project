@@ -1,120 +1,242 @@
 /* File: frontend/src/pages/AuthPage.css */
 
-/* This centers the card in the middle of the screen */
-.auth-container {
+/* --- 1. MAIN SPLIT SCREEN CONTAINER --- */
+.auth-split-screen {
   display: flex;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #ffffff;
+}
+
+/* --- 2. LEFT SIDE: BRANDING (Sky Blue Gradient) --- */
+.auth-left-ad {
+  flex: 1.2; /* 55% width */
+  /* THE "SKY BLUE" GRADIENT YOU WANTED */
+  background: linear-gradient(135deg, #00c6ff, #0072ff); 
+  display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
-  min-height: 100vh;
-  padding: 20px;
+  color: white;
+  padding: 60px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 5px 0 15px rgba(0,0,0,0.1); /* Subtle shadow separator */
+  z-index: 10;
 }
 
-/* This is the white card that holds the form */
-.form-card {
-  width: 100%;
-  max-width: 450px;
-  padding: 40px;
-  background-color: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+/* Floating Circles Animation (Subtle & Clean) */
+.auth-left-ad::before {
+  content: '';
+  position: absolute;
+  width: 400px;
+  height: 400px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  top: -100px;
+  left: -100px;
+  animation: floatCircle 8s ease-in-out infinite alternate;
 }
 
-.form-card h2 {
+.auth-left-ad::after {
+  content: '';
+  position: absolute;
+  width: 300px;
+  height: 300px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  bottom: -50px;
+  right: -50px;
+  animation: floatCircle 12s ease-in-out infinite alternate-reverse;
+}
+
+@keyframes floatCircle {
+  from { transform: translate(0, 0); }
+  to { transform: translate(30px, 30px); }
+}
+
+.brand-content {
+  z-index: 2;
   text-align: center;
-  font-size: 28px;
-  font-weight: 700;
-  color: #333;
-  margin-top: 0;
-  margin-bottom: 30px;
+  animation: slideUp 0.8s ease-out;
 }
 
-/* This is the container for a label and its input */
+.brand-title {
+  font-size: 3.5rem;
+  font-weight: 800;
+  margin: 0;
+  color: white;
+  text-shadow: 0 4px 10px rgba(0,0,0,0.2);
+  line-height: 1.1;
+  letter-spacing: -1px;
+}
+
+.brand-tagline {
+  font-size: 1.3rem;
+  margin-top: 20px;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 500;
+  max-width: 500px;
+  line-height: 1.5;
+}
+
+/* --- 3. RIGHT SIDE: FORM CONTAINER (Clean White) --- */
+.auth-right-form {
+  flex: 1; /* 45% width */
+  background-color: #ffffff;
+  height: 100vh;
+  overflow-y: auto; /* SCROLLS if content is too tall */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+/* FIX: Ensure content is centered but top is never cut off */
+.form-wrapper {
+  width: 100%;
+  max-width: 420px;
+  /* 'margin: auto' centers vertically, but is safe for scrolling */
+  margin: auto; 
+  padding: 40px 0;
+  animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- 4. FORM ELEMENTS --- */
+.auth-header {
+  margin-bottom: 30px;
+  text-align: left;
+}
+
+.auth-header h2 {
+  font-size: 2rem;
+  color: #333; /* Dark Grey Text */
+  margin-bottom: 10px;
+  font-weight: 700;
+}
+
+.auth-header p {
+  color: #777; /* Soft Grey */
+  font-size: 1rem;
+}
+
+/* Inputs - Clean Style */
 .form-group {
   margin-bottom: 20px;
-  text-align: left;
 }
 
 .form-group label {
   display: block;
   margin-bottom: 8px;
+  font-size: 0.9rem;
   font-weight: 600;
   color: #555;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-/* This styles all text inputs and select dropdowns */
-.form-input,
-.form-select {
-  width: 100%;
-  padding: 12px 14px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  box-sizing: border-box; /* Fixes padding issues */
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-/* Add a nice blue "glow" when a user clicks an input */
-.form-input:focus,
-.form-select:focus {
-  outline: none;
-  border-color: #007bff;
-  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15);
-}
-
-/* The main action button (Login / Sign Up) */
-.form-button {
+.form-input, .form-select {
   width: 100%;
   padding: 14px;
-  background-color: #007bff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 1rem;
+  background-color: #f8f9fa; /* Very light grey background */
+  color: #333;
+  transition: all 0.3s;
+}
+
+.form-input:focus, .form-select:focus {
+  border-color: #0072ff; /* Blue Border on Focus */
+  background-color: #fff;
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(0, 114, 255, 0.1);
+}
+
+/* Button - Sky Blue Gradient */
+.form-button {
+  width: 100%;
+  padding: 16px;
+  margin-top: 15px;
+  background: linear-gradient(90deg, #0072ff, #00c6ff);
   color: white;
   border: none;
   border-radius: 8px;
-  cursor: pointer;
-  font-size: 16px;
+  font-size: 1.1rem;
   font-weight: 600;
-  transition: background-color 0.2s;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 15px rgba(0, 114, 255, 0.3);
 }
 
 .form-button:hover {
-  background-color: #0056b3;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 114, 255, 0.4);
 }
 
-/* A special style for when the button is loading */
 .form-button:disabled {
-  background-color: #ccc;
+  background: #ccc;
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
-/* The red error message box */
+/* Error Box */
 .form-error {
-  color: #d8000c;
-  background-color: #ffd2d2;
-  border: 1px solid #d8000c;
-  padding: 12px;
+  background-color: #fff0f0;
+  color: #e63946;
+  padding: 15px;
   border-radius: 8px;
-  margin-bottom: 20px;
+  margin-bottom: 25px;
+  border-left: 5px solid #e63946;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+}
+
+/* Toggle Link */
+.toggle-section {
+  margin-top: 30px;
   text-align: center;
 }
 
-/* The text at the bottom to toggle between pages */
-.toggle-text {
-  text-align: center;
-  margin-top: 25px;
-  font-size: 15px;
-  color: #555;
+.toggle-section p {
+  color: #666;
+  font-size: 0.95rem;
 }
 
 .toggle-link {
-  color: #007bff;
-  font-weight: 600;
+  color: #0072ff;
+  font-weight: 700;
   cursor: pointer;
+  margin-left: 5px;
+  transition: color 0.2s;
 }
 
-/* --- RESPONSIVENESS --- */
-/* This makes it look great on phones */
-@media (max-width: 500px) {
-  .form-card {
-    padding: 30px 25px;
-    box-shadow: none;
-    border-radius: 0;
+.toggle-link:hover {
+  color: #005bb5;
+  text-decoration: underline;
+}
+
+/* --- RESPONSIVE MOBILE --- */
+@media (max-width: 900px) {
+  .auth-split-screen {
+    flex-direction: column;
+    overflow-y: auto;
+  }
+  .auth-left-ad {
+    display: none; /* Hide Ad on mobile to focus on login */
+  }
+  .auth-right-form {
+    height: auto;
+    min-height: 100vh;
   }
 }
