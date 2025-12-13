@@ -4,35 +4,48 @@ const admin = require('firebase-admin');
 // ... (all other imports are omitted for brevity, assume they are at the top)
 
 // --- registerUser ---
+// File: backend/controllers/userController.js
+
 const registerUser = async (req, res) => {
   try {
-    const db = admin.firestore();
+    // 1. GET DATA FIRST
     const { uid, name, email, role, rollNumber, assignedMentorId, assignedClassId, designation, department } = req.body;
+
+    // ---------------------------------------------------------
+    // 🚨 SECURITY FIX: THIS MUST BE THE FIRST THING WE DO 🚨
+    // ---------------------------------------------------------
+    if (role === 'hod') {
+      return res.status(403).json({ 
+        message: 'HOD registration is restricted. Please contact the administrator.' 
+      });
+    }
+    // ---------------------------------------------------------
+
+    // 2. NOW it is safe to talk to the database
+    const db = admin.firestore();
+    
+    // If the UID is missing (like in our test), we can handle it gracefully now
+    // (Though normally Firebase Auth handles UID generation)
+    if (!uid) {
+        // If it was a real signup, Firebase would have given a UID. 
+        // Since this is a test script without one, we stop here to prevent the crash.
+        return res.status(400).json({ message: "No UID provided (Hacker test caught early!)" });
+    }
+
     const userData = { uid, name, email, role };
 
-    // --- UPDATED BLOCK START ---
+    // Student Logic
     if (role === 'student') {
       userData.rollNumber = rollNumber;
-      userData.isPaid = false; // <--- ADDED: Default to unpaid for new students
-
-      if (assignedMentorId) {
-        userData.assignedMentorId = assignedMentorId;
-      }
-      if (assignedClassId) {
-        userData.assignedClassId = assignedClassId;
-      }
+      userData.isPaid = false; 
+      if (assignedMentorId) userData.assignedMentorId = assignedMentorId;
+      if (assignedClassId) userData.assignedClassId = assignedClassId;
     }
-    // --- UPDATED BLOCK END ---
 
-    // Capture department/designation for Faculty/HOD users signing up
-    if (role === 'faculty' || role === 'hod') {
+    // Faculty Logic
+    if (role === 'faculty') {
       userData.designation = designation || "N/A";
       userData.department = department || "N/A";
-    }
-    if (role === 'hod') {
-      userData.isApproved = true;
-    }
-    if (role === 'faculty') {
       userData.isApproved = false;
     }
 
