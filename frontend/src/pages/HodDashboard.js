@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import api from '../api';
-import './HodDashboard.css'; // This is the new CSS file
+import './HodDashboard.css'; 
 import mbuLogo from '../assets/MBU_Logo.png';
 
 // --- 1. REPLACEMENT: NEW REPORT STRUCTURE ---
@@ -59,10 +59,14 @@ function HodDashboard({ user, onLogout }) {
   const [facultyName, setFacultyName] = useState('');
   const [facultyEmail, setFacultyEmail] = useState('');
   const [facultyPassword, setFacultyPassword] = useState('');
+  const [facultyDesignation, setFacultyDesignation] = useState('Assistant Professor'); 
+  // --- FIX: ADDED DEPARTMENT STATE ---
+  const [facultyDepartment, setFacultyDepartment] = useState('Computer Applications');
+  
   const [className, setClassName] = useState('');
   const [classDepartment, setClassDepartment] = useState('');
   const [formLoading, setFormLoading] = useState(false);
-  const [isFacultyModalOpen, setIsFacultyModalOpen] = useState(false);
+  const [isFacultyModalOpen, setIsFacultyModalOpen] = useState(false); 
 
   // Preview Modal states
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
@@ -103,21 +107,25 @@ function HodDashboard({ user, onLogout }) {
       const { data } = await api.post('/hod/create-faculty', {
         name: facultyName,
         email: facultyEmail,
-        password: facultyPassword
+        password: facultyPassword,
+        designation: facultyDesignation || 'Assistant Professor',
+        // --- FIX: SEND DEPARTMENT ---
+        department: facultyDepartment || 'Computer Applications'
       });
       // Add new faculty to the top of the list
       setFacultyList(prev => [{ ...data, studentCount: 0 }, ...prev]);
 
-      // Reset form and close modal
-      setIsFacultyModalOpen(false);
+      // Reset form
       setFacultyName('');
-      setFacultyEmail(''); // <-- THIS IS THE CORRECTED LINE
+      setFacultyEmail('');
       setFacultyPassword('');
+      setFacultyDesignation('Assistant Professor'); 
+      setFacultyDepartment('Computer Applications');
       alert('Faculty created successfully!');
 
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to create faculty.');
-      console.error(err); // Keep console.error for debugging
+      console.error(err);
     }
     setFormLoading(false);
   };
@@ -140,32 +148,7 @@ function HodDashboard({ user, onLogout }) {
     }
     setFormLoading(false);
   };
-  // --- PASTE THESE 2 FUNCTIONS INSIDE YOUR FacultyDashboard COMPONENT ---
 
-  // Helper to render text with line breaks
-  const renderWithBreaks = (text = '') => {
-    return text.split('\n').map((line, index) => (
-      <React.Fragment key={index}>
-        {line}
-        <br />
-      </React.Fragment>
-    ));
-  };
-
-  // Helper to render skills with inline styles
-  const renderSkills = (skills = '') => {
-    return (
-      <ul style={{ paddingLeft: '20px', margin: '0' }}>
-        {skills.split(',').map((skill, index) => (
-          skill.trim() ? (
-            <li key={index} style={{ marginBottom: '5px' }}>
-              {skill.trim()}
-            </li>
-          ) : null
-        ))}
-      </ul>
-    );
-  };
   // --- Student Search ---
   const filteredStudents = useMemo(() => {
     if (!studentSearch) {
@@ -194,6 +177,7 @@ function HodDashboard({ user, onLogout }) {
     }
     setLoadingProject(false);
   };
+  
   // --- Handle Delete Student ---
   const handleDeleteStudent = async (studentId, studentName) => {
     if (window.confirm(`Are you sure you want to PERMANENTLY DELETE student "${studentName}"? This cannot be undone.`)) {
@@ -276,11 +260,6 @@ function HodDashboard({ user, onLogout }) {
     if (direction === 'next' && currentPageIndex < totalPages - 1) newIndex++;
     if (direction === 'prev' && currentPageIndex > 0) newIndex--;
     setCurrentPageIndex(newIndex);
-  };
-
-  // Helper to get status of a section
-  const getSectionStatus = (sectionId) => {
-    return selectedProject?.sections?.[sectionId]?.status || 'pending'; // Default to pending
   };
 
   // --- 3. REPLACEMENT: RENDER PREVIEW (A4 STYLE) ---
@@ -771,6 +750,32 @@ function HodDashboard({ user, onLogout }) {
                   <label>Email</label>
                   <input type="email" className="form-input" value={facultyEmail} onChange={(e) => setFacultyEmail(e.target.value)} required />
                 </div>
+                {/* --- FIX: DESIGNATION DROPDOWN --- */}
+                <div className="form-group">
+                  <label>Designation</label>
+                  <select 
+                    className="form-input" 
+                    value={facultyDesignation} 
+                    onChange={(e) => setFacultyDesignation(e.target.value)}
+                  >
+                    <option value="Assistant Professor">Assistant Professor</option>
+                    <option value="Associate Professor">Associate Professor</option>
+                    <option value="Professor">Professor</option>
+                  </select>
+                </div>
+                {/* --- FIX: ADDED DEPARTMENT INPUT --- */}
+                <div className="form-group">
+                  <label>Department</label>
+                  <input 
+                    type="text" 
+                    className="form-input" 
+                    value={facultyDepartment} 
+                    onChange={(e) => setFacultyDepartment(e.target.value)} 
+                    placeholder="e.g. Computer Applications"
+                    required 
+                  />
+                </div>
+                {/* ---------------------------------------- */}
                 <div className="form-group">
                   <label>Password</label>
                   <input type="password" placeholder="Min. 6 characters" className="form-input" value={facultyPassword} onChange={(e) => setFacultyPassword(e.target.value)} required />

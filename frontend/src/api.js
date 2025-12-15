@@ -4,9 +4,15 @@ import axios from 'axios';
 import { auth } from './firebaseConfig'; // We need this to get the token
 
 // Create an 'instance' of axios that points to our backend
+// File: frontend/src/api.js
+// ... imports
+
+// NEW (Forces it to work on Azure):
 const api = axios.create({
-  baseURL: 'http://localhost:5000/api'
+  baseURL: '/api' 
 });
+
+// ... rest of file
 
 // --- THIS IS THE NEW, IMPORTANT PART ---
 // This "interceptor" runs BEFORE every single API request

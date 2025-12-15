@@ -3,13 +3,14 @@
 import React, { useState, useEffect } from 'react';
 import { auth } from './firebaseConfig';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import axios from 'axios';
+// import axios from 'axios';  <-- DELETE THIS LINE
+import api from './api';    // <-- ADD THIS LINE (Use the helper we created)
 
 // Import all our pages
 import AuthPage from './pages/AuthPage';
 import HodDashboard from './pages/HodDashboard';
 import FacultyDashboard from './pages/FacultyDashboard';
-import StudentDashboard from './pages/StudentDashboard'; // <-- MAKE SURE THIS IS IMPORTED
+import StudentDashboard from './pages/StudentDashboard';
 
 function App() {
   const [currentUser, setCurrentUser] = useState(null);
@@ -31,9 +32,15 @@ function App() {
             }
           };
           
-          // 3. Call our backend to get the user's role and data
-          const response = await axios.get('http://localhost:5000/api/users/profile', config);
+          // --- THE FIX IS HERE ---
+          // OLD: axios.get('http://localhost:5000/api/users/profile', config)
+          // NEW: We use 'api.get' and REMOVE the localhost part.
+          // It will automatically use https://your-site.azurewebsites.net/api
           
+          const response = await api.get('/users/profile', config);
+          
+          // -----------------------
+
           // 4. Save the full user profile (name, role, etc.) in our state
           setCurrentUser(response.data);
 
@@ -86,12 +93,8 @@ function App() {
         return <HodDashboard user={currentUser} onLogout={handleLogout} />;
       case 'faculty':
         return <FacultyDashboard user={currentUser} onLogout={handleLogout} />;
-      
-      // --- THIS IS THE FIX ---
-      // This now loads your real StudentDashboard component
       case 'student':
         return <StudentDashboard user={currentUser} onLogout={handleLogout} />;
-      // ---------------------
         
       default:
         // This is a safety net

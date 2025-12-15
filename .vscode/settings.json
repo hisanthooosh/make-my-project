@@ -1,0 +1,8 @@
+{
+    "appService.zipIgnorePattern": [
+        "node_modules{,/**}",
+        ".vscode{,/**}"
+    ],
+    "appService.defaultWebAppToDeploy": "/subscriptions/c49fb178-911f-425d-a281-1603017f5972/resourceGroups/nourishnet-final/providers/Microsoft.Web/sites/makemyproject",
+    "appService.deploySubpath": "backend"
+}
