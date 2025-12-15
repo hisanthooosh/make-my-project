@@ -15,21 +15,21 @@ const registerUser = async (req, res) => {
     // 🚨 SECURITY FIX: THIS MUST BE THE FIRST THING WE DO 🚨
     // ---------------------------------------------------------
     if (role === 'hod') {
-      return res.status(403).json({ 
-        message: 'HOD registration is restricted. Please contact the administrator.' 
+      return res.status(403).json({
+        message: 'HOD registration is restricted. Please contact the administrator.'
       });
     }
     // ---------------------------------------------------------
 
     // 2. NOW it is safe to talk to the database
     const db = admin.firestore();
-    
+
     // If the UID is missing (like in our test), we can handle it gracefully now
     // (Though normally Firebase Auth handles UID generation)
     if (!uid) {
-        // If it was a real signup, Firebase would have given a UID. 
-        // Since this is a test script without one, we stop here to prevent the crash.
-        return res.status(400).json({ message: "No UID provided (Hacker test caught early!)" });
+      // If it was a real signup, Firebase would have given a UID. 
+      // Since this is a test script without one, we stop here to prevent the crash.
+      return res.status(400).json({ message: "No UID provided (Hacker test caught early!)" });
     }
 
     const userData = { uid, name, email, role };
@@ -37,7 +37,7 @@ const registerUser = async (req, res) => {
     // Student Logic
     if (role === 'student') {
       userData.rollNumber = rollNumber;
-      userData.isPaid = false; 
+      userData.isPaid = false;
       if (assignedMentorId) userData.assignedMentorId = assignedMentorId;
       if (assignedClassId) userData.assignedClassId = assignedClassId;
     }
@@ -139,7 +139,6 @@ const getMentors = async (req, res) => {
   }
 };
 
-// --- NEW FUNCTION: Get all classes (Public Read) ---
 const getClassesPublic = async (req, res) => {
   try {
     const db = admin.firestore();
@@ -148,8 +147,8 @@ const getClassesPublic = async (req, res) => {
     const classes = [];
     snapshot.forEach(doc => {
       classes.push({
-        id: doc.id, // We need the Firestore document ID here
-        name: doc.data().name
+        id: doc.id, 
+        name: doc.data().className // <--- CHANGE THIS LINE ONLY
       });
     });
 

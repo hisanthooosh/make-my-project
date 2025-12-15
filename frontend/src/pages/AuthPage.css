@@ -240,3 +240,26 @@
     min-height: 100vh;
   }
 }
+/* --- ULTIMATE FIX: Force Browser to Light Mode --- */
+select.form-select,
+select.form-select option {
+  /* 1. THIS IS THE MISSING KEY: Tells browser "Stop forcing Dark Mode text!" */
+  color-scheme: light !important; 
+  
+  /* 2. Force Black Text */
+  color: #000000 !important;
+  -webkit-text-fill-color: #000000 !important;
+  
+  /* 3. Force White Background */
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+}
+
+/* 4. Fix for Hover/Focus states (so it doesn't turn white on hover) */
+select.form-select:focus,
+select.form-select:hover {
+  border-color: #0072ff !important;
+  color: #000000 !important;
+  background-color: #ffffff !important;
+  color-scheme: light !important; 
+}
