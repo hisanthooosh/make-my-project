@@ -9,6 +9,8 @@ import {
 // import axios from 'axios'; <--- DELETE THIS
 import api from '../api'; // <--- USE YOUR API HELPER
 import './AuthPage.css';
+// Add this line at the top with other imports:
+import { Link } from 'react-router-dom';
 
 const AuthPage = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -183,6 +185,17 @@ const AuthPage = () => {
               </span>
             </p>
           </div>
+          {/* --- PASTE THIS CODE HERE --- */}
+          <footer style={{ marginTop: '40px', borderTop: '1px solid #eee', paddingTop: '20px', textAlign: 'center', fontSize: '0.85rem', color: '#666' }}>
+            <div style={{ display: 'flex', gap: '15px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '10px' }}>
+              <Link to="/terms" style={{ color: '#666', textDecoration: 'none' }}>Terms & Conditions</Link>
+              <Link to="/privacy" style={{ color: '#666', textDecoration: 'none' }}>Privacy Policy</Link>
+              <Link to="/refund" style={{ color: '#666', textDecoration: 'none' }}>Refund Policy</Link>
+              <Link to="/contact" style={{ color: '#666', textDecoration: 'none' }}>Contact Us</Link>
+            </div>
+            <div>&copy; 2025 Make My Project. All rights reserved.</div>
+          </footer>
+          {/* --------------------------- */}
 
         </div>
       </div>

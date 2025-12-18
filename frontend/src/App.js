@@ -6,6 +6,12 @@ import { onAuthStateChanged, signOut } from 'firebase/auth';
 // import axios from 'axios';  <-- DELETE THIS LINE
 import api from './api';    // <-- ADD THIS LINE (Use the helper we created)
 
+// --- NEW IMPORTS FOR ROUTING & POLICIES ---
+import { Routes, Route, Navigate } from 'react-router-dom';
+import PolicyPage from './pages/PolicyPage';
+import { TermsContent, PrivacyContent, RefundContent, ContactContent } from './pages/LegalContents';
+// ------------------------------------------
+
 // Import all our pages
 import AuthPage from './pages/AuthPage';
 import HodDashboard from './pages/HodDashboard';
@@ -80,14 +86,8 @@ function App() {
     );
   }
 
-  // --- This is our main "Router" ---
-  const renderDashboard = () => {
-    if (!currentUser) {
-      // If no user, show the Login/Signup page
-      return <AuthPage />;
-    }
-    
-    // If a user is logged in, check their role
+  // --- LOGGED IN VIEW: Show the correct Dashboard based on Role ---
+  if (currentUser) {
     switch (currentUser.role) {
       case 'hod':
         return <HodDashboard user={currentUser} onLogout={handleLogout} />;
@@ -100,17 +100,31 @@ function App() {
         // This is a safety net
         return (
           <div>
-            <h2>Error</h2>
+            <h2>Error bro</h2>
             <p>Unknown user role: {currentUser.role}</p>
             <button onClick={handleLogout}>Logout</button>
           </div>
         );
     }
-  };
+  }
 
+  // --- LOGGED OUT VIEW: Show Auth Page OR Policy Pages ---
   return (
     <div className="App">
-      {renderDashboard()}
+      <Routes>
+        {/* Main Login/Signup Page */}
+        <Route path="/" element={<AuthPage />} />
+        
+        {/* --- NEW POLICY ROUTES (Required for Razorpay) --- */}
+        <Route path="/terms" element={<PolicyPage title="Terms and Conditions" ContentComponent={TermsContent} />} />
+        <Route path="/privacy" element={<PolicyPage title="Privacy Policy" ContentComponent={PrivacyContent} />} />
+        <Route path="/refund" element={<PolicyPage title="Refund Policy" ContentComponent={RefundContent} />} />
+        <Route path="/contact" element={<PolicyPage title="Contact Us" ContentComponent={ContactContent} />} />
+        {/* ----------------------------------------------- */}
+
+        {/* Catch-all: Redirect unknown links back to Home */}
+        <Route path="*" element={<Navigate to="/" />} />
+      </Routes>
     </div>
   );
 }

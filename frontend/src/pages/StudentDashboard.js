@@ -1068,7 +1068,7 @@ const StudentDashboard = ({ user, onLogout }) => {
 
       // 2. Open Razorpay Options
       const options = {
-        key: "rzp_live_RpyJ3fMyy7SPLD", // <--- REPLACE THIS WITH YOUR ACTUAL KEY ID
+        key: "rzp_live_Rt86LAoIeissFR", // <--- REPLACE THIS WITH YOUR ACTUAL KEY ID
         amount: order.amount,
         currency: order.currency,
         name: "Project Report System",
