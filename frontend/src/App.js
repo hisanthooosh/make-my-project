@@ -52,9 +52,17 @@ function App() {
 
         } catch (error) {
           console.error("Could not fetch user profile:", error);
-          // If Firestore profile fails, log them out
-          await signOut(auth);
-          setCurrentUser(null);
+
+          // SAFEGUARD: Only log out if it's a real authentication error
+          // 401 = Token Invalid, 404 = User Deleted
+          if (error.response && (error.response.status === 401 || error.response.status === 404)) {
+             await signOut(auth);
+             setCurrentUser(null);
+          } else {
+             // If it's a Network Error or Server Timeout (500), 
+             // Do NOT log them out. Just let them stay on the screen.
+             console.log("Network glitch - keeping user session active.");
+          }
         }
       } else {
         // --- User is signed out ---

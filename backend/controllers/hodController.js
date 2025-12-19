@@ -109,7 +109,8 @@ const getDashboardStats = async (req, res) => {
         status: project ? (stats.progress === 100 ? 'Completed' : `${stats.progress}%`) : 'Not Started',
         approved: stats.approved,
         rejected: stats.rejected,
-        total: stats.total
+        total: stats.total,
+        isPaid: student.isPaid || false // <--- ADD THIS LINE HERE
       };
     });
 

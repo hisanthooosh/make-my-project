@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import api from '../api';
-import './HodDashboard.css'; 
+import './HodDashboard.css';
 import mbuLogo from '../assets/MBU_Logo.png';
 
 // --- 1. REPLACEMENT: NEW REPORT STRUCTURE ---
@@ -59,14 +59,14 @@ function HodDashboard({ user, onLogout }) {
   const [facultyName, setFacultyName] = useState('');
   const [facultyEmail, setFacultyEmail] = useState('');
   const [facultyPassword, setFacultyPassword] = useState('');
-  const [facultyDesignation, setFacultyDesignation] = useState('Assistant Professor'); 
+  const [facultyDesignation, setFacultyDesignation] = useState('Assistant Professor');
   // --- FIX: ADDED DEPARTMENT STATE ---
   const [facultyDepartment, setFacultyDepartment] = useState('Computer Applications');
-  
+
   const [className, setClassName] = useState('');
   const [classDepartment, setClassDepartment] = useState('');
   const [formLoading, setFormLoading] = useState(false);
-  const [isFacultyModalOpen, setIsFacultyModalOpen] = useState(false); 
+  const [isFacultyModalOpen, setIsFacultyModalOpen] = useState(false);
 
   // Preview Modal states
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
@@ -75,6 +75,14 @@ function HodDashboard({ user, onLogout }) {
   const [loadingProject, setLoadingProject] = useState(false);
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const pdfPreviewRef = useRef(null);
+
+  // ... existing states ...
+
+  // --- NEW: Roll Number Analysis State ---
+  const [rollPrefix, setRollPrefix] = useState('24102d02');
+  const [rollStart, setRollStart] = useState(1);
+  const [rollCount, setRollCount] = useState(131);
+  const [analysisResult, setAnalysisResult] = useState(null);
 
   // Fetch all dashboard data on load
   useEffect(() => {
@@ -119,7 +127,7 @@ function HodDashboard({ user, onLogout }) {
       setFacultyName('');
       setFacultyEmail('');
       setFacultyPassword('');
-      setFacultyDesignation('Assistant Professor'); 
+      setFacultyDesignation('Assistant Professor');
       setFacultyDepartment('Computer Applications');
       alert('Faculty created successfully!');
 
@@ -177,7 +185,7 @@ function HodDashboard({ user, onLogout }) {
     }
     setLoadingProject(false);
   };
-  
+
   // --- Handle Delete Student ---
   const handleDeleteStudent = async (studentId, studentName) => {
     if (window.confirm(`Are you sure you want to PERMANENTLY DELETE student "${studentName}"? This cannot be undone.`)) {
@@ -295,6 +303,9 @@ function HodDashboard({ user, onLogout }) {
       title: 'INTERNSHIP REPORT', subTitle: 'A report submitted...', degree: 'MCA',
       companyName: 'IBM', duration: 'July to Aug', academicYear: '2024 - 2025'
     };
+
+    // --- NEW: Handle Roll Analysis ---
+    
 
     return (
       <div className="preview-content-wrapper" ref={pdfPreviewRef}>
@@ -592,6 +603,48 @@ function HodDashboard({ user, onLogout }) {
       </div>
     );
   };
+
+  const handleAnalyzeRolls = () => {
+      // 1. Generate Expected Roll Numbers
+      const expectedRolls = [];
+      for (let i = 0; i < rollCount; i++) {
+        const currentNum = parseInt(rollStart) + i;
+        // Pad with 4 zeros (e.g., 1 -> 0001)
+        const numPart = currentNum.toString().padStart(4, '0');
+        expectedRolls.push(`${rollPrefix}${numPart}`.toLowerCase());
+      }
+
+      // 2. Compare with Actual Database
+      const registered = [];
+      const unregistered = [];
+      const paid = [];
+      const unpaid = [];
+      const completed = [];
+
+      expectedRolls.forEach(roll => {
+        // Find student (case insensitive)
+        const student = studentList.find(s => s.rollNumber && s.rollNumber.toLowerCase() === roll);
+
+        if (student) {
+          registered.push(student);
+          if (student.isPaid) paid.push(student);
+          else unpaid.push(student);
+
+          if (student.status === 'Completed') completed.push(student);
+        } else {
+          unregistered.push(roll);
+        }
+      });
+
+      setAnalysisResult({
+        totalExpected: expectedRolls.length,
+        registered,
+        unregistered,
+        paid,
+        unpaid,
+        completed
+      });
+    };
   return (
     <div className="hod-dashboard">
       <header className="hod-header">
@@ -614,6 +667,8 @@ function HodDashboard({ user, onLogout }) {
           <button className={`tab-button ${activeTab === 'all-students' ? 'active' : ''}`} onClick={() => { setActiveTab('all-students'); setError(''); }}>All Students</button>
           <button className={`tab-button ${activeTab === 'add-faculty' ? 'active' : ''}`} onClick={() => { setActiveTab('add-faculty'); setError(''); }}>Create Faculty</button>
           <button className={`tab-button ${activeTab === 'add-class' ? 'active' : ''}`} onClick={() => { setActiveTab('add-class'); setError(''); }}>Create Class</button>
+          {/* ... existing tabs ... */}
+          <button className={`tab-button ${activeTab === 'analysis' ? 'active' : ''}`} onClick={() => setActiveTab('analysis')}>Roll No Analysis</button>
         </div>
 
         {/* --- TAB CONTENT --- */}
@@ -753,9 +808,9 @@ function HodDashboard({ user, onLogout }) {
                 {/* --- FIX: DESIGNATION DROPDOWN --- */}
                 <div className="form-group">
                   <label>Designation</label>
-                  <select 
-                    className="form-input" 
-                    value={facultyDesignation} 
+                  <select
+                    className="form-input"
+                    value={facultyDesignation}
                     onChange={(e) => setFacultyDesignation(e.target.value)}
                   >
                     <option value="Assistant Professor">Assistant Professor</option>
@@ -766,13 +821,13 @@ function HodDashboard({ user, onLogout }) {
                 {/* --- FIX: ADDED DEPARTMENT INPUT --- */}
                 <div className="form-group">
                   <label>Department</label>
-                  <input 
-                    type="text" 
-                    className="form-input" 
-                    value={facultyDepartment} 
-                    onChange={(e) => setFacultyDepartment(e.target.value)} 
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={facultyDepartment}
+                    onChange={(e) => setFacultyDepartment(e.target.value)}
                     placeholder="e.g. Computer Applications"
-                    required 
+                    required
                   />
                 </div>
                 {/* ---------------------------------------- */}
@@ -805,6 +860,86 @@ function HodDashboard({ user, onLogout }) {
                   {formLoading ? 'Creating...' : 'Create Class'}
                 </button>
               </form>
+            </div>
+          )}
+          {/* --- NEW: Roll Analysis Tab --- */}
+          {activeTab === 'analysis' && (
+            <div id="analysis-tab" className="tab-pane">
+              <div className="form-container" style={{ maxWidth: '100%' }}>
+                <h2>Class Roll Number Analysis</h2>
+
+                {/* Controls */}
+                <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-end', marginBottom: '30px', padding: '20px', background: '#f8f9fa', borderRadius: '8px' }}>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Roll Number Prefix</label>
+                    <input className="form-input" value={rollPrefix} onChange={e => setRollPrefix(e.target.value)} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Start Number</label>
+                    <input type="number" className="form-input" value={rollStart} onChange={e => setRollStart(e.target.value)} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Total Students</label>
+                    <input type="number" className="form-input" value={rollCount} onChange={e => setRollCount(e.target.value)} />
+                  </div>
+                  <button className="form-button" onClick={handleAnalyzeRolls}>Generate Report</button>
+                </div>
+
+                {/* Results */}
+                {analysisResult && (
+                  <div className="analysis-results">
+                    {/* Summary Cards */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '15px', marginBottom: '30px' }}>
+                      <div className="info-card" style={{ textAlign: 'center' }}><h3>Total Class Strength</h3><h2>{analysisResult.totalExpected}</h2></div>
+                      <div className="info-card" style={{ textAlign: 'center', borderLeft: '5px solid #10b981' }}><h3>Registered</h3><h2>{analysisResult.registered.length}</h2></div>
+                      <div className="info-card" style={{ textAlign: 'center', borderLeft: '5px solid #ef4444' }}><h3>Unregistered</h3><h2>{analysisResult.unregistered.length}</h2></div>
+                      <div className="info-card" style={{ textAlign: 'center', borderLeft: '5px solid #3b82f6' }}><h3>Paid Fees</h3><h2>{analysisResult.paid.length}</h2></div>
+                      <div className="info-card" style={{ textAlign: 'center', borderLeft: '5px solid #f59e0b' }}><h3>Completed Project</h3><h2>{analysisResult.completed.length}</h2></div>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '30px' }}>
+
+                      {/* Unregistered List */}
+                      <div style={{ flex: 1 }}>
+                        <h3 style={{ color: '#dc3545' }}>Unregistered Students ({analysisResult.unregistered.length})</h3>
+                        <div style={{ maxHeight: '400px', overflowY: 'auto', border: '1px solid #ddd', background: 'white' }}>
+                          <table className="student-table">
+                            <thead><tr><th>Roll Number</th><th>Status</th></tr></thead>
+                            <tbody>
+                              {analysisResult.unregistered.map(roll => (
+                                <tr key={roll}>
+                                  <td style={{ fontWeight: 'bold' }}>{roll}</td>
+                                  <td style={{ color: 'red' }}>Not Registered</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+
+                      {/* Unpaid List */}
+                      <div style={{ flex: 1 }}>
+                        <h3 style={{ color: '#f59e0b' }}>Unpaid Registered Students ({analysisResult.unpaid.length})</h3>
+                        <div style={{ maxHeight: '400px', overflowY: 'auto', border: '1px solid #ddd', background: 'white' }}>
+                          <table className="student-table">
+                            <thead><tr><th>Roll Number</th><th>Name</th><th>Action</th></tr></thead>
+                            <tbody>
+                              {analysisResult.unpaid.map(s => (
+                                <tr key={s.uid}>
+                                  <td>{s.rollNumber}</td>
+                                  <td>{s.name}</td>
+                                  <td><span style={{ background: '#ffeeba', padding: '2px 8px', borderRadius: '4px', fontSize: '12px' }}>Pending Payment</span></td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>

@@ -1,38 +1,29 @@
 // File: frontend/src/api.js
 
 import axios from 'axios';
-import { auth } from './firebaseConfig'; // We need this to get the token
+import { auth } from './firebaseConfig'; 
 
-// Create an 'instance' of axios that points to our backend
-// File: frontend/src/api.js
-// ... imports
+// --- SMART BASE URL CONFIGURATION ---
+const isLocal = window.location.hostname === 'localhost';
 
-// NEW (Forces it to work on Azure):
+// CHANGE 8080 TO 5000 HERE:
 const api = axios.create({
-  baseURL: '/api' 
+  baseURL: isLocal ? 'http://localhost:5000/api' : '/api' 
 });
 
-// ... rest of file
-
-// --- THIS IS THE NEW, IMPORTANT PART ---
-// This "interceptor" runs BEFORE every single API request
+// --- SECURITY INTERCEPTOR ---
 api.interceptors.request.use(
   async (config) => {
-    // Get the currently logged-in user
     const user = auth.currentUser;
-
     if (user) {
-      // If the user is logged in, get their ID token
       const token = await user.getIdToken();
-      // Add the token to the 'Authorization' header
       config.headers.Authorization = `Bearer ${token}`;
     }
-    return config; // Send the request
+    return config;
   },
   (error) => {
     return Promise.reject(error);
   }
 );
-// ------------------------------------
 
 export default api;
