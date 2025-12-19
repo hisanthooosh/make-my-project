@@ -2,26 +2,39 @@
 const admin = require('firebase-admin');
 
 // --- Helper Function to get section counts ---
+// File: backend/controllers/hodController.js
+
+// ... (keep the top imports)
+
 const calculateProjectStats = (project) => {
   if (!project || !project.sections) {
     return { approved: 0, pending: 0, rejected: 0, total: 0, progress: 0 };
   }
 
-  // This must match the `reportStructure` on the frontend
+  // --- FIX: USE THE EXACT IDS FROM YOUR FRONTEND STRUCTURE ---
   const allSectionIds = [
-    'certificate', 'declaration', 'abstract', 'toc',
-    'intro_main', 'intro_aim', 'intro_domain', 'intro_scope',
-    'literatureReview',
-    'problem_existing', 'problem_hardware', 'problem_software',
-    'proposed_objectives', 'proposed_formulation', 'proposed_methodology',
-    'datasetCollection',
-    'design_high_level', 'design_flow_chart', 'design_use_case', 'design_class',
-    'design_sequence', 'design_deployment', 'design_activity',
-    'impl_platform', 'impl_testing', 'impl_results',
-    'concl_limitations', 'concl_future_work',
-    'references', 'bioData'
+    'titlePage',
+    'certificate',
+    'certificateScan',
+    'acknowledgement',
+    'abstract',
+    'orgInfo',
+    'methodologies',
+    'benefits',
+    'toc',
+    'weeklyOverview',
+    'intro_main',      // Subsection of Introduction
+    'intro_modules',   // Subsection of Introduction
+    'systemAnalysis',
+    'srs',
+    'technology',
+    'coding',
+    'screenshots',
+    'conclusion',
+    'bibliography'
   ];
-  
+  // ---------------------------------------------------------
+
   let approved = 0;
   let pending = 0;
   let rejected = 0;
@@ -37,12 +50,13 @@ const calculateProjectStats = (project) => {
       pending++;
     }
   });
-  
+
   const progress = total > 0 ? Math.round((approved / total) * 100) : 0;
 
   return { approved, pending, rejected, total, progress };
 };
 
+// ... (rest of the file remains the same)
 
 // @desc    Get all stats for the HOD Dashboard
 // @route   GET /api/hod/dashboard-stats
@@ -147,7 +161,7 @@ const getStudentProjectForHod = async (req, res) => {
 
     const project = projectQuery.docs[0].data();
     project.id = projectQuery.docs[0].id;
-    
+
     res.status(200).json(project);
 
   } catch (error) {
@@ -176,12 +190,12 @@ const createClass = async (req, res) => {
     };
 
     const docRef = await db.collection('classes').add(newClass);
-    res.status(201).json({ 
-      message: 'Class created successfully', 
-      id: docRef.id, 
-      name: className, 
+    res.status(201).json({
+      message: 'Class created successfully',
+      id: docRef.id,
+      name: className,
       department: department,
-      studentCount: 0 
+      studentCount: 0
     });
   } catch (error) {
     console.error('Error in createClass:', error);

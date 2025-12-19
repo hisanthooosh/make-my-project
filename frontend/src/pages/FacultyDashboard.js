@@ -66,6 +66,8 @@ const FacultyDashboard = ({ user, onLogout }) => {
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const pdfPreviewRef = useRef(null);
 
+  const [filterStatus, setFilterStatus] = useState('all'); // <--- ADD THIS
+
   // --- Fetch Students on Mount ---
   useEffect(() => {
     const fetchStudents = async () => {
@@ -81,13 +83,22 @@ const FacultyDashboard = ({ user, onLogout }) => {
     fetchStudents();
   }, []);
 
-  // --- Search Filter ---
+ // --- Search & Filter Logic ---
   const filteredStudents = useMemo(() => {
-    return students.filter(student =>
-      (student.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-      (student.rollNumber?.toLowerCase() || '').includes(searchTerm.toLowerCase())
-    );
-  }, [students, searchTerm]);
+    return students.filter(student => {
+      // 1. Search Match
+      const matchesSearch = (student.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+                            (student.rollNumber?.toLowerCase() || '').includes(searchTerm.toLowerCase());
+      
+      // 2. Status Match
+      let matchesStatus = true;
+      if (filterStatus !== 'all') {
+        matchesStatus = student.overallStatus === filterStatus; 
+      }
+
+      return matchesSearch && matchesStatus;
+    });
+  }, [students, searchTerm, filterStatus]);
 
   // --- Select Student & Fetch Project ---
   const handleSelectStudent = async (student) => {
@@ -636,10 +647,23 @@ const FacultyDashboard = ({ user, onLogout }) => {
             <div className="search-box">
               <input
                 type="text"
-                placeholder="Search Name or Roll No..."
+                placeholder="Search..."
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
               />
+            </div>
+            {/* NEW FILTER DROPDOWN */}
+            <div style={{display: 'flex', gap: '5px', marginTop: '10px'}}>
+              <select 
+                value={filterStatus} 
+                onChange={(e) => setFilterStatus(e.target.value)}
+                style={{width: '100%', padding: '5px', borderRadius: '4px', border: '1px solid #ddd'}}
+              >
+                <option value="all">Show All</option>
+                <option value="Pending">Pending Review</option>
+                <option value="Completed">Completed (100%)</option>
+                <option value="Not Started">Not Started</option>
+              </select>
             </div>
           </div>
 
@@ -653,12 +677,28 @@ const FacultyDashboard = ({ user, onLogout }) => {
                 onClick={() => handleSelectStudent(student)}
               >
                 <div className="student-avatar">{student.name.charAt(0)}</div>
-                <div className="student-info">
-                  <h4>{student.name}</h4>
-                  <p>{student.rollNumber}</p>
+                <div className="student-info" style={{width: '100%'}}>
+                  <div style={{display: 'flex', justifyContent: 'space-between'}}>
+                    <h4>{student.name}</h4>
+                    <span style={{fontSize: '0.8rem', color: '#666'}}>{student.rollNumber}</span>
+                  </div>
+                  
+                  {/* NEW: Mini Progress Bar */}
+                  <div style={{marginTop: '5px'}}>
+                    <div style={{background: '#eee', height: '6px', borderRadius: '3px', width: '100%'}}>
+                      <div style={{
+                        background: student.overallStatus === 'Completed' ? '#10b981' : '#3b82f6',
+                        width: `${student.progress || 0}%`,
+                        height: '100%',
+                        borderRadius: '3px'
+                      }}></div>
+                    </div>
+                    <div style={{fontSize: '0.75rem', marginTop: '2px', color: '#555', display:'flex', justifyContent:'space-between'}}>
+                      <span>{student.overallStatus}</span>
+                      <span>{student.progress || 0}%</span>
+                    </div>
+                  </div>
                 </div>
-                {/* Status Dot */}
-                <div className={`status-indicator ${student.overallStatus || 'draft'}`}></div>
               </div>
             ))}
           </div>

@@ -1,9 +1,35 @@
 // File: backend/controllers/facultyController.js
 const admin = require('firebase-admin');
 
+// --- Helper: Calculate Progress ---
+const calculateStats = (project) => {
+  if (!project || !project.sections) return { progress: 0, status: 'Not Started' };
 
+  // Must match your Frontend Report Structure
+  const allSectionIds = [
+    'titlePage', 'certificate', 'certificateScan', 'acknowledgement',
+    'abstract', 'orgInfo', 'methodologies', 'benefits', 'toc',
+    'weeklyOverview', 'intro_main', 'intro_modules',
+    'systemAnalysis', 'srs', 'technology', 'coding',
+    'screenshots', 'conclusion', 'bibliography'
+  ];
 
-// @desc    Get all students assigned to the logged-in faculty
+  let approved = 0;
+  const total = allSectionIds.length;
+
+  allSectionIds.forEach(id => {
+    if (project.sections[id]?.status === 'approved') approved++;
+  });
+
+  const progress = total > 0 ? Math.round((approved / total) * 100) : 0;
+  
+  let status = 'Pending';
+  if (progress === 0) status = 'Not Started';
+  if (progress === 100) status = 'Completed';
+
+  return { progress, status };
+};
+// @desc    Get all students with Progress Stats
 // @route   GET /api/faculty/my-students
 // @access  Private (Faculty Only)
 const getMyStudents = async (req, res) => {
@@ -11,23 +37,42 @@ const getMyStudents = async (req, res) => {
     const db = admin.firestore();
     const facultyUid = req.user.uid;
 
-    // Find all users who are 'student' and assigned to this faculty
+    // 1. Get Students
     const studentsQuery = await db.collection('users')
       .where('role', '==', 'student')
       .where('assignedMentorId', '==', facultyUid)
       .get();
 
-    if (studentsQuery.empty) {
-      return res.status(200).json([]); // Return an empty list, not an error
-    }
+    if (studentsQuery.empty) return res.status(200).json([]);
 
-    const students = studentsQuery.docs.map(doc => {
-      // --- THIS IS THE FIX ---
-      const { name, email, uid, rollNumber } = doc.data(); // Get rollNumber
-      return { name, email, uid, rollNumber }; // Send rollNumber
+    const students = studentsQuery.docs.map(doc => ({ uid: doc.id, ...doc.data() }));
+
+    // 2. Get All Projects for these students (Efficient Query)
+    const projectsQuery = await db.collection('projects')
+      .where('mentorUid', '==', facultyUid)
+      .get();
+
+    const projectsMap = {};
+    projectsQuery.forEach(doc => {
+      projectsMap[doc.data().studentUid] = doc.data();
     });
 
-    res.status(200).json(students);
+    // 3. Merge Data with Stats
+    const studentsWithStats = students.map(student => {
+      const project = projectsMap[student.uid];
+      const stats = calculateStats(project);
+      
+      return {
+        uid: student.uid,
+        name: student.name,
+        email: student.email,
+        rollNumber: student.rollNumber,
+        progress: stats.progress,
+        overallStatus: stats.status // 'Completed', 'Pending', 'Not Started'
+      };
+    });
+
+    res.status(200).json(studentsWithStats);
   } catch (error) {
     console.error('Error in getMyStudents:', error);
     res.status(500).json({ message: 'Server error' });
